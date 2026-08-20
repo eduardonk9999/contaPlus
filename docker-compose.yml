@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: contaplus-db
+    environment:
+      POSTGRES_DB: contaplus
+      POSTGRES_USER: contaplus
+      POSTGRES_PASSWORD: contaplus
+    ports:
+      - "5432:5432"
+    volumes:
+      - contaplus-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contaplus"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+
+volumes:
+  contaplus-data:
