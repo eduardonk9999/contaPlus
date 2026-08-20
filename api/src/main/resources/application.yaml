@@ -1,3 +1,20 @@
 spring:
   application:
     name: contaPlus
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/contaplus
+    username: contaplus
+    password: contaplus
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    org.hibernate.SQL: debug
