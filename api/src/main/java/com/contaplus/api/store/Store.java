@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 @Entity
-@Table(name = "stores")
+@Table(name = "stores_")
 public class Store {
 
     @Id
@@ -17,6 +17,6 @@ public class Store {
     @Column(nullable = false)
     private String currency;
 
-    
+
 
 }
