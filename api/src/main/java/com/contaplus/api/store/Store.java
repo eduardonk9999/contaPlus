@@ -15,7 +15,7 @@ public class Store {
     private UUID id;
 
     @Column(nullable = false)
-    private String currency;
+    private String name;
 
     @Column(nullable = false)
     private String currency;
@@ -38,6 +38,15 @@ public class Store {
 
     public String getName() {
         return name;
+    }
+
+    Store(String name) {
+        this.id = UUID.randomUUID();
+        this.name = name;
+        this.currency = "BRL";
+        this.timezone = "America/Sao_Paulo";
+        this.createdAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
     }
 
 }
