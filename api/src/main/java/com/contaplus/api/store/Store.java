@@ -39,5 +39,5 @@ public class Store {
     public String getName() {
         return name;
     }
-    
+
 }
