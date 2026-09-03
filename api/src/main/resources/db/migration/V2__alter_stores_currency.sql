@@ -1,0 +1,1 @@
+alter table stores alter column currency type varchar(3);
