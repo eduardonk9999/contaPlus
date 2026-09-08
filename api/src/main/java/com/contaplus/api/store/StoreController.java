@@ -26,4 +26,6 @@ public class StoreController {
 
     // DTO de saida
     record StoreResponse(UUID id, String name) {}
+
+    record StoreResponse(UUID id, String name) {}
 }
