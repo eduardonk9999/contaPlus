@@ -40,7 +40,23 @@ public class Store {
         return name;
     }
 
-    Store(String name) {
+    public String getCurrency() {
+        return currency;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public Store(String name) {
         this.id = UUID.randomUUID();
         this.name = name;
         this.currency = "BRL";
@@ -49,4 +65,8 @@ public class Store {
         this.updatedAt = OffsetDateTime.now();
     }
 
+    void updateName(String name) {
+        this.name = name;
+        this.updatedAt = OffsetDateTime.now();
+    }
 }
