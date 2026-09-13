@@ -75,6 +75,16 @@ public class StockService {
         );
     }
 
+    @Transactional
+    public StockMovement reverterVenda(Store store, Product product, Transaction transaction,
+                                       BigDecimal quantidadeVendida, OffsetDateTime occurredAt) {
+        return registrarMovimento(
+            store, product, transaction,
+            StockMovementType.REVERSAL, quantidadeVendida,
+            "Sale cancellation: " + transaction.getId(), occurredAt
+        );
+    }
+
     public List<StockMovement> listarMovimentosPorProduto(UUID productId) {
         return movementRepository.findByProductIdOrderByCreatedAtDesc(productId);
     }

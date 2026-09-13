@@ -22,6 +22,18 @@ spring:
       hibernate:
         format_sql: true
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+
+jwt:
+  secret: ${JWT_SECRET:chave-secreta-contaplus-desenvolvimento-min-256-bits-ok}
+  expiration: 86400000
+
 logging:
   level:
     org.hibernate.SQL: debug

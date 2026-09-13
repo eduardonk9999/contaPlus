@@ -2,31 +2,33 @@
 
 ## Prioridade Alta
 
-### Autenticação e Segurança
-- [ ] Implementar Spring Security
-- [ ] Autenticação JWT
-- [ ] Módulo de usuários (User entity, roles)
-- [ ] Associar usuário à loja
-- [ ] Proteção de endpoints
+### ~~Autenticação e Segurança~~ ✅
+- [x] Implementar Spring Security
+- [x] Autenticação JWT
+- [x] Módulo de usuários (User entity, roles)
+- [x] Associar usuário à loja
+- [x] Proteção de endpoints
+- [x] Login com Google (OAuth2)
 
-### Módulo de Compras
-- [ ] PurchaseController e PurchaseService
-- [ ] Endpoint POST `/v1/purchases` para registrar compras
-- [ ] Atualizar estoque automaticamente (incrementar)
-- [ ] Criar StockMovement tipo PURCHASE
+### ~~Módulo de Compras~~ ✅
+- [x] PurchaseController e PurchaseService
+- [x] Endpoint POST `/v1/purchases` para registrar compras
+- [x] Atualizar estoque automaticamente (incrementar)
+- [x] Criar StockMovement tipo PURCHASE
+- [x] Atualizar custo do produto na compra (opcional)
 
-### Cancelamento de Vendas
-- [ ] Endpoint PUT `/v1/sales/{id}/cancel`
-- [ ] Reverter estoque ao cancelar
-- [ ] Criar StockMovement tipo CANCELLATION
+### ~~Cancelamento de Vendas~~ ✅
+- [x] Endpoint PUT `/v1/sales/{id}/cancel`
+- [x] Reverter estoque ao cancelar
+- [x] Criar StockMovement tipo REVERSAL
 
 ## Prioridade Média
 
-### Clientes
-- [ ] Entidade Customer
-- [ ] CRUD de clientes
-- [ ] Associar cliente à venda (opcional)
-- [ ] Histórico de compras por cliente
+### ~~Clientes~~ ✅
+- [x] Entidade Customer
+- [x] CRUD de clientes
+- [x] Associar cliente à venda (opcional)
+- [x] Histórico de compras por cliente
 
 ### Formas de Pagamento
 - [ ] Entidade PaymentMethod
@@ -34,11 +36,11 @@
 - [ ] Suportar múltiplas formas na mesma venda
 - [ ] Controle de troco
 
-### Caixa
-- [ ] Entidade CashRegister
-- [ ] Abertura/fechamento de caixa
-- [ ] Sangria e suprimento
-- [ ] Relatório de fechamento
+### ~~Caixa~~ ✅
+- [x] Entidade CashRegister
+- [x] Abertura/fechamento de caixa
+- [x] Sangria e suprimento
+- [x] Relatório de fechamento
 
 ### Relatórios
 - [ ] Vendas por período

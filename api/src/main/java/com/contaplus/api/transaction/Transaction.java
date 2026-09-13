@@ -1,5 +1,6 @@
 package com.contaplus.api.transaction;
 
+import com.contaplus.api.customer.Customer;
 import com.contaplus.api.store.Store;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -18,6 +19,10 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -94,6 +99,18 @@ public class Transaction {
 
     public UUID getStoreId() {
         return store.getId();
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public UUID getCustomerId() {
+        return customer != null ? customer.getId() : null;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
 
     public TransactionType getType() {

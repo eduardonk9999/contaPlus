@@ -1,5 +1,7 @@
 package com.contaplus.api.sale;
 
+import com.contaplus.api.customer.Customer;
+import com.contaplus.api.customer.CustomerRepository;
 import com.contaplus.api.exception.ResourceNotFoundException;
 import com.contaplus.api.product.Product;
 import com.contaplus.api.product.ProductRepository;
@@ -22,15 +24,18 @@ public class SaleService {
 
     private final TransactionRepository transactionRepository;
     private final ProductRepository productRepository;
+    private final CustomerRepository customerRepository;
     private final StoreService storeService;
     private final StockService stockService;
 
     SaleService(TransactionRepository transactionRepository,
                 ProductRepository productRepository,
+                CustomerRepository customerRepository,
                 StoreService storeService,
                 StockService stockService) {
         this.transactionRepository = transactionRepository;
         this.productRepository = productRepository;
+        this.customerRepository = customerRepository;
         this.storeService = storeService;
         this.stockService = stockService;
     }
@@ -61,6 +66,19 @@ public class SaleService {
 
         if (request.originalInput() != null) {
             transaction.setOriginalInput(request.originalInput());
+        }
+
+        if (request.customerId() != null) {
+            Customer customer = customerRepository.findById(request.customerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer", request.customerId()));
+
+            if (!customer.getStoreId().equals(request.storeId())) {
+                throw new IllegalArgumentException(
+                    "Customer " + request.customerId() + " does not belong to store " + request.storeId()
+                );
+            }
+
+            transaction.setCustomer(customer);
         }
 
         // First, validate all products and create items
@@ -107,6 +125,36 @@ public class SaleService {
         return transactionRepository.findByStore_IdAndTypeOrderByOccurredAtDesc(storeId, TransactionType.SALE);
     }
 
+    @Transactional
+    public Transaction cancelarVenda(UUID transactionId) {
+        Transaction transaction = transactionRepository.findById(transactionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Transaction", transactionId));
+
+        if (transaction.getType() != TransactionType.SALE) {
+            throw new IllegalArgumentException("Only sales can be cancelled through this endpoint");
+        }
+
+        if (transaction.getStatus() == TransactionStatus.CANCELLED) {
+            return transaction;
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        for (TransactionItem item : transaction.getItems()) {
+            Product product = item.getProduct();
+            stockService.reverterVenda(
+                transaction.getStore(),
+                product,
+                transaction,
+                item.getQuantity(),
+                now
+            );
+        }
+
+        transaction.cancel();
+        return transactionRepository.save(transaction);
+    }
+
     public record ConfirmarVendaRequest(
         UUID storeId,
         UUID idempotencyKey,
@@ -114,7 +162,8 @@ public class SaleService {
         List<ItemVendaRequest> items,
         TransactionSource source,
         String originalInput,
-        OffsetDateTime occurredAt
+        OffsetDateTime occurredAt,
+        UUID customerId
     ) {}
 
     public record ItemVendaRequest(

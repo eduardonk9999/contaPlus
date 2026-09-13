@@ -41,7 +41,8 @@ public class SaleController {
                 .toList(),
             request.source(),
             request.originalInput(),
-            request.occurredAt()
+            request.occurredAt(),
+            request.customerId()
         );
 
         Transaction transaction = saleService.confirmarVenda(serviceRequest);
@@ -66,6 +67,12 @@ public class SaleController {
         return toResponse(transaction);
     }
 
+    @PutMapping("/{id}/cancel")
+    public SaleResponse cancelar(@PathVariable UUID id) {
+        Transaction transaction = saleService.cancelarVenda(id);
+        return toResponse(transaction);
+    }
+
     @GetMapping
     public List<SaleResponse> listarPorStore(@RequestParam UUID storeId) {
         return saleService.listarVendasPorStore(storeId).stream()
@@ -81,6 +88,7 @@ public class SaleController {
         return new SaleResponse(
             transaction.getId(),
             transaction.getStoreId(),
+            transaction.getCustomerId(),
             transaction.getStatus(),
             transaction.getSource(),
             transaction.getDescription(),
@@ -117,7 +125,8 @@ public class SaleController {
         @NotEmpty(message = "items cannot be empty") List<ItemRequest> items,
         TransactionSource source,
         String originalInput,
-        OffsetDateTime occurredAt
+        OffsetDateTime occurredAt,
+        UUID customerId
     ) {}
 
     record PreviewRequest(
@@ -133,6 +142,7 @@ public class SaleController {
     record SaleResponse(
         UUID id,
         UUID storeId,
+        UUID customerId,
         TransactionStatus status,
         TransactionSource source,
         String description,

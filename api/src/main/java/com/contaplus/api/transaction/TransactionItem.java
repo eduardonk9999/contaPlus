@@ -139,4 +139,19 @@ public class TransactionItem {
     public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
+
+    public void overrideCost(Integer newUnitCostCents) {
+        this.unitCostCents = newUnitCostCents;
+        this.totalCostCents = quantity.multiply(BigDecimal.valueOf(newUnitCostCents))
+            .setScale(0, java.math.RoundingMode.HALF_UP).intValue();
+        this.grossProfitCents = this.totalAmountCents - this.totalCostCents;
+
+        if (this.totalAmountCents > 0) {
+            this.marginPercent = BigDecimal.valueOf(this.grossProfitCents)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(this.totalAmountCents), 2, java.math.RoundingMode.HALF_UP);
+        } else {
+            this.marginPercent = BigDecimal.ZERO;
+        }
+    }
 }

@@ -143,4 +143,9 @@ public class Product {
     public boolean isLowStock() {
         return stockQuantity.compareTo(minStockQuantity) < 0;
     }
+
+    public void updateCost(Integer newCostPriceCents) {
+        this.costPriceCents = newCostPriceCents;
+        this.updatedAt = OffsetDateTime.now();
+    }
 }
