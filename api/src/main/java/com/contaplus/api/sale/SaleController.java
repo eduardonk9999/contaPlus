@@ -1,5 +1,6 @@
 package com.contaplus.api.sale;
 
+import com.contaplus.api.common.PageResponse;
 import com.contaplus.api.product.StockUnit;
 import com.contaplus.api.transaction.Transaction;
 import com.contaplus.api.transaction.TransactionItem;
@@ -9,6 +10,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -74,10 +77,16 @@ public class SaleController {
     }
 
     @GetMapping
-    public List<SaleResponse> listarPorStore(@RequestParam UUID storeId) {
-        return saleService.listarVendasPorStore(storeId).stream()
-            .map(this::toResponse)
-            .toList();
+    public PageResponse<SaleResponse> listarPorStore(
+            @RequestParam UUID storeId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("occurredAt").descending());
+        return PageResponse.from(
+            saleService.listarVendasPorStorePaginado(storeId, pageable),
+            this::toResponse
+        );
     }
 
     private SaleResponse toResponse(Transaction transaction) {

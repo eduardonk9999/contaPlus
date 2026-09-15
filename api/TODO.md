@@ -42,12 +42,13 @@
 - [x] Sangria e suprimento
 - [x] Relatório de fechamento
 
-### Relatórios
-- [ ] Vendas por período
-- [ ] Produtos mais vendidos
-- [ ] Margem de lucro por produto
-- [ ] Estoque baixo (alerta)
-- [ ] Movimentações de estoque
+### ~~Relatórios~~ ✅
+- [x] Vendas por período
+- [x] Produtos mais vendidos
+- [x] Margem de lucro por produto
+- [x] Estoque baixo (alerta)
+- [x] Movimentações de estoque
+- [x] Dashboard consolidado
 
 ## Prioridade Baixa
 
@@ -56,7 +57,7 @@
 - [ ] Documentar DTOs de request/response
 
 ### Melhorias Técnicas
-- [ ] Paginação nos endpoints de listagem
+- [x] Paginação nos endpoints de listagem
 - [ ] Filtros avançados (data, status, etc)
 - [ ] Cache com Redis
 - [ ] Rate limiting

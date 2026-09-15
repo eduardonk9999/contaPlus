@@ -7,6 +7,8 @@ import com.contaplus.api.transaction.Transaction;
 import com.contaplus.api.transaction.TransactionRepository;
 import com.contaplus.api.transaction.TransactionType;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -57,6 +59,16 @@ public class CustomerService {
 
     public List<Customer> buscarPorNome(UUID storeId, String nome) {
         return customerRepository.findByStore_IdAndNameContainingIgnoreCase(storeId, nome);
+    }
+
+    public Page<Customer> listarPorStorePaginado(UUID storeId, boolean includeInactive, String search, Pageable pageable) {
+        if (search != null && !search.isBlank()) {
+            return customerRepository.findByStore_IdAndNameContainingIgnoreCaseAndActiveTrue(storeId, search, pageable);
+        }
+        if (includeInactive) {
+            return customerRepository.findByStore_Id(storeId, pageable);
+        }
+        return customerRepository.findByStore_IdAndActiveTrue(storeId, pageable);
     }
 
     @Transactional

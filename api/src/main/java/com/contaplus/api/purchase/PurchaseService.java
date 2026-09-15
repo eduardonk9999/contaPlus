@@ -10,6 +10,9 @@ import com.contaplus.api.transaction.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -104,6 +107,10 @@ public class PurchaseService {
 
     public List<Transaction> listarComprasPorStore(UUID storeId) {
         return transactionRepository.findByStore_IdAndTypeOrderByOccurredAtDesc(storeId, TransactionType.PURCHASE);
+    }
+
+    public Page<Transaction> listarComprasPorStorePaginado(UUID storeId, Pageable pageable) {
+        return transactionRepository.findByStore_IdAndType(storeId, TransactionType.PURCHASE, pageable);
     }
 
     public record RegistrarCompraRequest(

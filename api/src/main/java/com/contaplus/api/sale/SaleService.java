@@ -12,6 +12,9 @@ import com.contaplus.api.transaction.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -123,6 +126,10 @@ public class SaleService {
 
     public List<Transaction> listarVendasPorStore(UUID storeId) {
         return transactionRepository.findByStore_IdAndTypeOrderByOccurredAtDesc(storeId, TransactionType.SALE);
+    }
+
+    public Page<Transaction> listarVendasPorStorePaginado(UUID storeId, Pageable pageable) {
+        return transactionRepository.findByStore_IdAndType(storeId, TransactionType.SALE, pageable);
     }
 
     @Transactional

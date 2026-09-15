@@ -1,10 +1,13 @@
 package com.contaplus.api.customer;
 
+import com.contaplus.api.common.PageResponse;
 import com.contaplus.api.transaction.Transaction;
 import com.contaplus.api.transaction.TransactionStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,22 +49,24 @@ public class CustomerController {
     }
 
     @GetMapping
-    public List<CustomerResponse> listar(
+    public PageResponse<CustomerResponse> listar(
             @RequestParam UUID storeId,
             @RequestParam(defaultValue = "false") boolean includeInactive,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
     ) {
-        List<Customer> customers;
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+            ? Sort.by(sortBy).descending()
+            : Sort.by(sortBy).ascending();
+        PageRequest pageable = PageRequest.of(page, size, sort);
 
-        if (search != null && !search.isBlank()) {
-            customers = customerService.buscarPorNome(storeId, search);
-        } else {
-            customers = customerService.listarPorStore(storeId, includeInactive);
-        }
-
-        return customers.stream()
-            .map(this::toResponse)
-            .toList();
+        return PageResponse.from(
+            customerService.listarPorStorePaginado(storeId, includeInactive, search, pageable),
+            this::toResponse
+        );
     }
 
     @PutMapping("/{id}")

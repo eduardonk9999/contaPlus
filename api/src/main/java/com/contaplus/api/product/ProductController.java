@@ -1,9 +1,12 @@
 package com.contaplus.api.product;
 
+import com.contaplus.api.common.PageResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,12 +45,24 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<ProductResponse> listarPorStore(
+    public PageResponse<ProductResponse> listarPorStore(
             @RequestParam UUID storeId,
-            @RequestParam(defaultValue = "true") boolean apenasAtivos) {
-        return service.listarPorStore(storeId, apenasAtivos).stream()
-            .map(this::toResponse)
-            .toList();
+            @RequestParam(defaultValue = "true") boolean apenasAtivos,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ) {
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+            ? Sort.by(sortBy).descending()
+            : Sort.by(sortBy).ascending();
+        PageRequest pageable = PageRequest.of(page, size, sort);
+
+        return PageResponse.from(
+            service.listarPorStorePaginado(storeId, apenasAtivos, search, pageable),
+            this::toResponse
+        );
     }
 
     @PutMapping("/{id}")

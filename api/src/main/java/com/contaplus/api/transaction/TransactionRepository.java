@@ -1,5 +1,7 @@
 package com.contaplus.api.transaction;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.OffsetDateTime;
@@ -18,7 +20,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     List<Transaction> findByStore_IdAndTypeOrderByOccurredAtDesc(UUID storeId, TransactionType type);
 
+    Page<Transaction> findByStore_IdAndType(UUID storeId, TransactionType type, Pageable pageable);
+
     List<Transaction> findByCustomer_IdOrderByOccurredAtDesc(UUID customerId);
 
     List<Transaction> findByCustomer_IdAndTypeOrderByOccurredAtDesc(UUID customerId, TransactionType type);
+
+    Page<Transaction> findByCustomer_IdAndType(UUID customerId, TransactionType type, Pageable pageable);
 }

@@ -4,6 +4,8 @@ import com.contaplus.api.exception.ResourceNotFoundException;
 import com.contaplus.api.store.Store;
 import com.contaplus.api.store.StoreService;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -49,6 +51,16 @@ public class ProductService {
             return repository.findByStore_IdAndActiveTrue(storeId);
         }
         return repository.findByStore_Id(storeId);
+    }
+
+    public Page<Product> listarPorStorePaginado(UUID storeId, boolean apenasAtivos, String search, Pageable pageable) {
+        if (search != null && !search.isBlank()) {
+            return repository.findByStore_IdAndNameContainingIgnoreCaseAndActiveTrue(storeId, search, pageable);
+        }
+        if (apenasAtivos) {
+            return repository.findByStore_IdAndActiveTrue(storeId, pageable);
+        }
+        return repository.findByStore_Id(storeId, pageable);
     }
 
     @Transactional
