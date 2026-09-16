@@ -2,6 +2,7 @@ package com.contaplus.api.transaction;
 
 import com.contaplus.api.customer.Customer;
 import com.contaplus.api.store.Store;
+import com.contaplus.api.supplier.Supplier;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -23,6 +24,10 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
     private Customer customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -111,6 +116,18 @@ public class Transaction {
 
     public void setCustomer(Customer customer) {
         this.customer = customer;
+    }
+
+    public Supplier getSupplier() {
+        return supplier;
+    }
+
+    public UUID getSupplierId() {
+        return supplier != null ? supplier.getId() : null;
+    }
+
+    public void setSupplier(Supplier supplier) {
+        this.supplier = supplier;
     }
 
     public TransactionType getType() {

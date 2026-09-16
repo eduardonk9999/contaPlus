@@ -41,7 +41,8 @@ public class PurchaseController {
                 .map(i -> new PurchaseService.ItemCompraRequest(i.productId(), i.quantity(), i.unitCostCents()))
                 .toList(),
             request.source(),
-            request.occurredAt()
+            request.occurredAt(),
+            request.supplierId()
         );
 
         Transaction transaction = purchaseService.registrarCompra(serviceRequest);
@@ -75,6 +76,7 @@ public class PurchaseController {
         return new PurchaseResponse(
             transaction.getId(),
             transaction.getStoreId(),
+            transaction.getSupplierId(),
             transaction.getStatus(),
             transaction.getSource(),
             transaction.getDescription(),
@@ -103,7 +105,8 @@ public class PurchaseController {
         String description,
         @NotEmpty(message = "items cannot be empty") List<ItemRequest> items,
         TransactionSource source,
-        OffsetDateTime occurredAt
+        OffsetDateTime occurredAt,
+        UUID supplierId
     ) {}
 
     record ItemRequest(
@@ -115,6 +118,7 @@ public class PurchaseController {
     record PurchaseResponse(
         UUID id,
         UUID storeId,
+        UUID supplierId,
         TransactionStatus status,
         TransactionSource source,
         String description,

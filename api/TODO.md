@@ -63,10 +63,10 @@
 - [ ] Rate limiting
 - [ ] Logs estruturados (JSON)
 
-### Fornecedores
-- [ ] Entidade Supplier
-- [ ] CRUD de fornecedores
-- [ ] Associar fornecedor à compra
+### ~~Fornecedores~~ ✅
+- [x] Entidade Supplier
+- [x] CRUD de fornecedores
+- [x] Associar fornecedor à compra
 
 ### Categorias
 - [ ] Entidade Category

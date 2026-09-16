@@ -6,6 +6,8 @@ import com.contaplus.api.product.ProductRepository;
 import com.contaplus.api.stock.StockService;
 import com.contaplus.api.store.Store;
 import com.contaplus.api.store.StoreService;
+import com.contaplus.api.supplier.Supplier;
+import com.contaplus.api.supplier.SupplierRepository;
 import com.contaplus.api.transaction.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -25,15 +27,18 @@ public class PurchaseService {
 
     private final TransactionRepository transactionRepository;
     private final ProductRepository productRepository;
+    private final SupplierRepository supplierRepository;
     private final StoreService storeService;
     private final StockService stockService;
 
     PurchaseService(TransactionRepository transactionRepository,
                     ProductRepository productRepository,
+                    SupplierRepository supplierRepository,
                     StoreService storeService,
                     StockService stockService) {
         this.transactionRepository = transactionRepository;
         this.productRepository = productRepository;
+        this.supplierRepository = supplierRepository;
         this.storeService = storeService;
         this.stockService = stockService;
     }
@@ -61,6 +66,19 @@ public class PurchaseService {
             request.idempotencyKey(),
             occurredAt
         );
+
+        if (request.supplierId() != null) {
+            Supplier supplier = supplierRepository.findById(request.supplierId())
+                .orElseThrow(() -> new ResourceNotFoundException("Supplier", request.supplierId()));
+
+            if (!supplier.getStoreId().equals(request.storeId())) {
+                throw new IllegalArgumentException(
+                    "Supplier " + request.supplierId() + " does not belong to store " + request.storeId()
+                );
+            }
+
+            transaction.setSupplier(supplier);
+        }
 
         List<Product> productsToUpdate = new ArrayList<>();
         for (ItemCompraRequest itemReq : request.items()) {
@@ -119,7 +137,8 @@ public class PurchaseService {
         String description,
         List<ItemCompraRequest> items,
         TransactionSource source,
-        OffsetDateTime occurredAt
+        OffsetDateTime occurredAt,
+        UUID supplierId
     ) {}
 
     public record ItemCompraRequest(
