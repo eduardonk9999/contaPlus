@@ -63,4 +63,13 @@ public class ReportController {
     ) {
         return reportService.dashboard(storeId, startDate, endDate);
     }
+
+    @GetMapping("/sales-by-category")
+    public List<ReportService.CategorySalesReport> vendasPorCategoria(
+            @RequestParam UUID storeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate
+    ) {
+        return reportService.vendasPorCategoria(storeId, startDate, endDate);
+    }
 }

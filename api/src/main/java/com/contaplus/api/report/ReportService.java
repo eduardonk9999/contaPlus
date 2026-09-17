@@ -1,5 +1,7 @@
 package com.contaplus.api.report;
 
+import com.contaplus.api.category.Category;
+import com.contaplus.api.category.CategoryRepository;
 import com.contaplus.api.product.Product;
 import com.contaplus.api.product.ProductRepository;
 import com.contaplus.api.stock.StockMovement;
@@ -21,13 +23,16 @@ public class ReportService {
 
     private final TransactionRepository transactionRepository;
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final StockMovementRepository stockMovementRepository;
 
     ReportService(TransactionRepository transactionRepository,
                   ProductRepository productRepository,
+                  CategoryRepository categoryRepository,
                   StockMovementRepository stockMovementRepository) {
         this.transactionRepository = transactionRepository;
         this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
         this.stockMovementRepository = stockMovementRepository;
     }
 
@@ -179,6 +184,72 @@ public class ReportService {
         return new DashboardReport(sales, topProducts, lowStock.size(), lowStock.stream().limit(5).toList());
     }
 
+    public List<CategorySalesReport> vendasPorCategoria(UUID storeId, OffsetDateTime startDate, OffsetDateTime endDate) {
+        List<Transaction> transactions = transactionRepository
+            .findByStore_IdAndOccurredAtBetweenOrderByOccurredAtDesc(storeId, startDate, endDate)
+            .stream()
+            .filter(t -> t.getType() == TransactionType.SALE)
+            .filter(t -> t.getStatus() != com.contaplus.api.transaction.TransactionStatus.CANCELLED)
+            .toList();
+
+        Map<UUID, CategorySalesAccumulator> categorySales = new HashMap<>();
+        int uncategorizedAmount = 0;
+        int uncategorizedCount = 0;
+
+        for (Transaction t : transactions) {
+            for (TransactionItem item : t.getItems()) {
+                UUID categoryId = item.getProduct().getCategoryId();
+                if (categoryId != null) {
+                    categorySales.computeIfAbsent(categoryId, k -> {
+                        Category cat = categoryRepository.findById(k).orElse(null);
+                        return new CategorySalesAccumulator(k, cat != null ? cat.getName() : "Unknown");
+                    });
+                    categorySales.get(categoryId).add(item);
+                } else {
+                    uncategorizedAmount += item.getTotalAmountCents();
+                    uncategorizedCount++;
+                }
+            }
+        }
+
+        List<CategorySalesReport> result = categorySales.values().stream()
+            .map(acc -> new CategorySalesReport(
+                acc.categoryId,
+                acc.categoryName,
+                acc.totalAmountCents,
+                acc.totalCostCents,
+                acc.totalAmountCents - acc.totalCostCents,
+                acc.itemCount
+            ))
+            .sorted((a, b) -> Integer.compare(b.totalAmountCents(), a.totalAmountCents()))
+            .collect(Collectors.toCollection(ArrayList::new));
+
+        if (uncategorizedCount > 0) {
+            result.add(new CategorySalesReport(null, "Sem Categoria", uncategorizedAmount, 0, uncategorizedAmount, uncategorizedCount));
+        }
+
+        return result;
+    }
+
+    private static class CategorySalesAccumulator {
+        UUID categoryId;
+        String categoryName;
+        int totalAmountCents = 0;
+        int totalCostCents = 0;
+        int itemCount = 0;
+
+        CategorySalesAccumulator(UUID categoryId, String categoryName) {
+            this.categoryId = categoryId;
+            this.categoryName = categoryName;
+        }
+
+        void add(TransactionItem item) {
+            this.totalAmountCents += item.getTotalAmountCents();
+            this.totalCostCents += item.getTotalCostCents();
+            this.itemCount++;
+        }
+    }
+
     private static class ProductSalesAccumulator {
         UUID productId;
         String productName;
@@ -257,5 +328,14 @@ public class ReportService {
         List<TopSellingProduct> topProducts,
         int lowStockCount,
         List<LowStockProduct> lowStockProducts
+    ) {}
+
+    public record CategorySalesReport(
+        UUID categoryId,
+        String categoryName,
+        int totalAmountCents,
+        int totalCostCents,
+        int grossProfitCents,
+        int itemCount
     ) {}
 }

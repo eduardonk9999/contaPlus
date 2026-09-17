@@ -1,5 +1,6 @@
 package com.contaplus.api.product;
 
+import com.contaplus.api.category.Category;
 import com.contaplus.api.store.Store;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -16,6 +17,10 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     @Column(nullable = false)
     private String name;
@@ -77,6 +82,19 @@ public class Product {
 
     public UUID getStoreId() {
         return store.getId();
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public UUID getCategoryId() {
+        return category != null ? category.getId() : null;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+        this.updatedAt = OffsetDateTime.now();
     }
 
     public String getName() {

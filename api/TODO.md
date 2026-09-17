@@ -60,18 +60,18 @@
 - [x] Paginação nos endpoints de listagem
 - [ ] Filtros avançados (data, status, etc)
 - [ ] Cache com Redis
-- [ ] Rate limiting
-- [ ] Logs estruturados (JSON)
+- [x] Rate limiting
+- [x] Logs estruturados (JSON)
 
 ### ~~Fornecedores~~ ✅
 - [x] Entidade Supplier
 - [x] CRUD de fornecedores
 - [x] Associar fornecedor à compra
 
-### Categorias
-- [ ] Entidade Category
-- [ ] Categorizar produtos
-- [ ] Relatórios por categoria
+### ~~Categorias~~ ✅
+- [x] Entidade Category
+- [x] Categorizar produtos
+- [x] Relatórios por categoria
 
 ## Concluído
 

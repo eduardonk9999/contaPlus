@@ -1,0 +1,9 @@
+spring:
+  profiles:
+    active: prod
+
+logging:
+  level:
+    root: INFO
+    com.contaplus: INFO
+    org.hibernate.SQL: WARN

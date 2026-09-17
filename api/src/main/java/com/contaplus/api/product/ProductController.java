@@ -33,7 +33,8 @@ public class ProductController {
             request.type() != null ? request.type() : ProductType.SELLABLE,
             request.costPriceCents(),
             request.salePriceCents(),
-            request.stockUnit() != null ? request.stockUnit() : StockUnit.UNIT
+            request.stockUnit() != null ? request.stockUnit() : StockUnit.UNIT,
+            request.categoryId()
         );
         return toResponse(product);
     }
@@ -74,7 +75,8 @@ public class ProductController {
             request.costPriceCents(),
             request.salePriceCents(),
             request.stockUnit(),
-            request.minStockQuantity() != null ? request.minStockQuantity() : BigDecimal.ZERO
+            request.minStockQuantity() != null ? request.minStockQuantity() : BigDecimal.ZERO,
+            request.categoryId()
         );
         return toResponse(product);
     }
@@ -89,6 +91,7 @@ public class ProductController {
         return new ProductResponse(
             product.getId(),
             product.getStoreId(),
+            product.getCategoryId(),
             product.getName(),
             product.getType(),
             product.getCostPriceCents(),
@@ -106,7 +109,8 @@ public class ProductController {
         ProductType type,
         @NotNull(message = "costPriceCents is required") @Min(0) Integer costPriceCents,
         @NotNull(message = "salePriceCents is required") @Min(0) Integer salePriceCents,
-        StockUnit stockUnit
+        StockUnit stockUnit,
+        UUID categoryId
     ) {}
 
     record AtualizarProductRequest(
@@ -115,12 +119,14 @@ public class ProductController {
         @NotNull(message = "costPriceCents is required") @Min(0) Integer costPriceCents,
         @NotNull(message = "salePriceCents is required") @Min(0) Integer salePriceCents,
         @NotNull(message = "stockUnit is required") StockUnit stockUnit,
-        BigDecimal minStockQuantity
+        BigDecimal minStockQuantity,
+        UUID categoryId
     ) {}
 
     record ProductResponse(
         UUID id,
         UUID storeId,
+        UUID categoryId,
         String name,
         ProductType type,
         Integer costPriceCents,
