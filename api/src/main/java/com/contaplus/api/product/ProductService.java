@@ -77,6 +77,10 @@ public class ProductService {
         return repository.findByStore_Id(storeId, pageable);
     }
 
+    public Page<Product> listarComFiltros(ProductFilter filter, Pageable pageable) {
+        return repository.findAll(filter.toSpecification(), pageable);
+    }
+
     @Transactional
     public Product atualizar(UUID id, String name, ProductType type, Integer costPriceCents,
                              Integer salePriceCents, StockUnit stockUnit, BigDecimal minStockQuantity, UUID categoryId) {

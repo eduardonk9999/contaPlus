@@ -58,7 +58,7 @@
 
 ### Melhorias Técnicas
 - [x] Paginação nos endpoints de listagem
-- [ ] Filtros avançados (data, status, etc)
+- [x] Filtros avançados (data, status, etc)
 - [ ] Cache com Redis
 - [x] Rate limiting
 - [x] Logs estruturados (JSON)

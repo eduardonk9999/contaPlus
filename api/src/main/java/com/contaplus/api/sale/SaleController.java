@@ -2,10 +2,8 @@ package com.contaplus.api.sale;
 
 import com.contaplus.api.common.PageResponse;
 import com.contaplus.api.product.StockUnit;
-import com.contaplus.api.transaction.Transaction;
-import com.contaplus.api.transaction.TransactionItem;
-import com.contaplus.api.transaction.TransactionSource;
-import com.contaplus.api.transaction.TransactionStatus;
+import com.contaplus.api.transaction.*;
+import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -79,12 +77,26 @@ public class SaleController {
     @GetMapping
     public PageResponse<SaleResponse> listarPorStore(
             @RequestParam UUID storeId,
+            @RequestParam(required = false) TransactionStatus status,
+            @RequestParam(required = false) UUID customerId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
+            @RequestParam(required = false) Integer minAmount,
+            @RequestParam(required = false) Integer maxAmount,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("occurredAt").descending());
+
+        TransactionFilter filter = new TransactionFilter(
+            storeId, TransactionType.SALE, status,
+            customerId, null,
+            startDate, endDate,
+            minAmount, maxAmount
+        );
+
         return PageResponse.from(
-            saleService.listarVendasPorStorePaginado(storeId, pageable),
+            saleService.listarComFiltros(filter, pageable),
             this::toResponse
         );
     }

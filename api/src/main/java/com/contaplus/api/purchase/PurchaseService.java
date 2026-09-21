@@ -9,6 +9,7 @@ import com.contaplus.api.store.StoreService;
 import com.contaplus.api.supplier.Supplier;
 import com.contaplus.api.supplier.SupplierRepository;
 import com.contaplus.api.transaction.*;
+import org.springframework.data.jpa.domain.Specification;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -129,6 +130,12 @@ public class PurchaseService {
 
     public Page<Transaction> listarComprasPorStorePaginado(UUID storeId, Pageable pageable) {
         return transactionRepository.findByStore_IdAndType(storeId, TransactionType.PURCHASE, pageable);
+    }
+
+    public Page<Transaction> listarComFiltros(TransactionFilter filter, Pageable pageable) {
+        Specification<Transaction> spec = filter.toSpecification()
+            .and((root, query, cb) -> cb.equal(root.get("type"), TransactionType.PURCHASE));
+        return transactionRepository.findAll(spec, pageable);
     }
 
     public record RegistrarCompraRequest(

@@ -48,8 +48,13 @@ public class ProductController {
     @GetMapping
     public PageResponse<ProductResponse> listarPorStore(
             @RequestParam UUID storeId,
-            @RequestParam(defaultValue = "true") boolean apenasAtivos,
+            @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) ProductType type,
+            @RequestParam(required = false) Integer minPrice,
+            @RequestParam(required = false) Integer maxPrice,
+            @RequestParam(required = false) Boolean lowStock,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "name") String sortBy,
@@ -60,8 +65,14 @@ public class ProductController {
             : Sort.by(sortBy).ascending();
         PageRequest pageable = PageRequest.of(page, size, sort);
 
+        ProductFilter filter = new ProductFilter(
+            storeId, search, categoryId, type,
+            active != null ? active : true,
+            minPrice, maxPrice, lowStock
+        );
+
         return PageResponse.from(
-            service.listarPorStorePaginado(storeId, apenasAtivos, search, pageable),
+            service.listarComFiltros(filter, pageable),
             this::toResponse
         );
     }
