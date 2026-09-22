@@ -1,6 +1,7 @@
 package com.contaplus.api.transaction;
 
 import com.contaplus.api.customer.Customer;
+import com.contaplus.api.payment.Payment;
 import com.contaplus.api.store.Store;
 import com.contaplus.api.supplier.Supplier;
 import jakarta.persistence.*;
@@ -73,6 +74,9 @@ public class Transaction {
 
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TransactionItem> items = new ArrayList<>();
+
+    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments = new ArrayList<>();
 
     protected Transaction() {
     }
@@ -218,5 +222,30 @@ public class Transaction {
     public void cancel() {
         this.status = TransactionStatus.CANCELLED;
         this.updatedAt = OffsetDateTime.now();
+    }
+
+    public List<Payment> getPayments() {
+        return payments;
+    }
+
+    public void addPayment(Payment payment) {
+        payments.add(payment);
+        this.updatedAt = OffsetDateTime.now();
+    }
+
+    public Integer getTotalPaidCents() {
+        return payments.stream()
+            .mapToInt(Payment::getNetAmountCents)
+            .sum();
+    }
+
+    public Integer getTotalChangeCents() {
+        return payments.stream()
+            .mapToInt(Payment::getChangeCents)
+            .sum();
+    }
+
+    public boolean isPaid() {
+        return getTotalPaidCents() >= totalAmountCents;
     }
 }

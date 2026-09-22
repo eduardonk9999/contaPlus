@@ -3,6 +3,8 @@ package com.contaplus.api.sale;
 import com.contaplus.api.common.PageResponse;
 import com.contaplus.api.product.StockUnit;
 import com.contaplus.api.transaction.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -20,6 +22,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/sales")
+@Tag(name = "Vendas", description = "Registro e gerenciamento de vendas")
 public class SaleController {
 
     private final SaleService saleService;

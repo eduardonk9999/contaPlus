@@ -30,11 +30,11 @@
 - [x] Associar cliente à venda (opcional)
 - [x] Histórico de compras por cliente
 
-### Formas de Pagamento
-- [ ] Entidade PaymentMethod
-- [ ] Associar pagamento à transação
-- [ ] Suportar múltiplas formas na mesma venda
-- [ ] Controle de troco
+### ~~Formas de Pagamento~~ ✅
+- [x] Entidade PaymentMethod
+- [x] Associar pagamento à transação
+- [x] Suportar múltiplas formas na mesma venda
+- [x] Controle de troco
 
 ### ~~Caixa~~ ✅
 - [x] Entidade CashRegister
@@ -52,14 +52,14 @@
 
 ## Prioridade Baixa
 
-### Documentação
-- [ ] Swagger/OpenAPI
-- [ ] Documentar DTOs de request/response
+### ~~Documentação~~ ✅
+- [x] Swagger/OpenAPI
+- [x] Documentar DTOs de request/response
 
 ### Melhorias Técnicas
 - [x] Paginação nos endpoints de listagem
 - [x] Filtros avançados (data, status, etc)
-- [ ] Cache com Redis
+- [x] Cache com Redis
 - [x] Rate limiting
 - [x] Logs estruturados (JSON)
 

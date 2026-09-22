@@ -40,6 +40,25 @@ rate-limit:
   auth-requests-per-minute: 10
   burst-capacity: 20
 
+cache:
+  enabled: ${CACHE_ENABLED:true}
+
+spring.data.redis:
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  password: ${REDIS_PASSWORD:}
+  timeout: 2000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    doc-expansion: none
+  show-actuator: false
+
 logging:
   level:
     root: INFO

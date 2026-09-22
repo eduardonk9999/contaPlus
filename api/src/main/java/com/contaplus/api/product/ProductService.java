@@ -1,11 +1,14 @@
 package com.contaplus.api.product;
 
+import com.contaplus.api.cache.CacheNames;
 import com.contaplus.api.category.Category;
 import com.contaplus.api.category.CategoryRepository;
 import com.contaplus.api.exception.ResourceNotFoundException;
 import com.contaplus.api.store.Store;
 import com.contaplus.api.store.StoreService;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,7 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = CacheNames.PRODUCTS, key = "#storeId")
     public Product criar(UUID storeId, String name, ProductType type, Integer costPriceCents,
                          Integer salePriceCents, StockUnit stockUnit, UUID categoryId) {
         Store store = storeService.buscarPorId(storeId);
@@ -60,6 +64,7 @@ public class ProductService {
             .orElseThrow(() -> new ResourceNotFoundException("Product", id));
     }
 
+    @Cacheable(value = CacheNames.PRODUCTS, key = "#storeId + '-' + #apenasAtivos")
     public List<Product> listarPorStore(UUID storeId, boolean apenasAtivos) {
         if (apenasAtivos) {
             return repository.findByStore_IdAndActiveTrue(storeId);
@@ -82,6 +87,7 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = CacheNames.PRODUCTS, allEntries = true)
     public Product atualizar(UUID id, String name, ProductType type, Integer costPriceCents,
                              Integer salePriceCents, StockUnit stockUnit, BigDecimal minStockQuantity, UUID categoryId) {
         Product product = buscarPorId(id);
@@ -108,6 +114,7 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = CacheNames.PRODUCTS, allEntries = true)
     public void desativar(UUID id) {
         Product product = buscarPorId(id);
         product.deactivate();

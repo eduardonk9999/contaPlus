@@ -7,6 +7,7 @@ import com.contaplus.api.auth.InvalidGoogleTokenException;
 import com.contaplus.api.cashregister.CashRegisterAlreadyOpenException;
 import com.contaplus.api.cashregister.CashRegisterClosedException;
 import com.contaplus.api.cashregister.NoCashRegisterOpenException;
+import com.contaplus.api.security.UnauthorizedStoreAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -152,5 +153,31 @@ public class GlobalExceptionHandler {
             request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(UnauthorizedStoreAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedStoreAccess(
+            UnauthorizedStoreAccessException ex,
+            HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+            HttpStatus.FORBIDDEN.value(),
+            "Forbidden",
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex,
+            HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+            HttpStatus.FORBIDDEN.value(),
+            "Forbidden",
+            "Acesso negado: permissão insuficiente",
+            request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 }

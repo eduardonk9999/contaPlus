@@ -1,5 +1,6 @@
 package com.contaplus.api.report;
 
+import com.contaplus.api.cache.CacheNames;
 import com.contaplus.api.category.Category;
 import com.contaplus.api.category.CategoryRepository;
 import com.contaplus.api.product.Product;
@@ -10,6 +11,7 @@ import com.contaplus.api.transaction.Transaction;
 import com.contaplus.api.transaction.TransactionItem;
 import com.contaplus.api.transaction.TransactionRepository;
 import com.contaplus.api.transaction.TransactionType;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -80,6 +82,7 @@ public class ReportService {
         );
     }
 
+    @Cacheable(value = CacheNames.REPORTS, key = "'top-' + #storeId + '-' + #startDate.toEpochSecond() + '-' + #endDate.toEpochSecond() + '-' + #limit")
     public List<TopSellingProduct> produtosMaisVendidos(UUID storeId, OffsetDateTime startDate, OffsetDateTime endDate, int limit) {
         List<Transaction> transactions = transactionRepository
             .findByStore_IdAndOccurredAtBetweenOrderByOccurredAtDesc(storeId, startDate, endDate)
@@ -176,6 +179,7 @@ public class ReportService {
             .toList();
     }
 
+    @Cacheable(value = CacheNames.DASHBOARD, key = "#storeId + '-' + #startDate.toEpochSecond() + '-' + #endDate.toEpochSecond()")
     public DashboardReport dashboard(UUID storeId, OffsetDateTime startDate, OffsetDateTime endDate) {
         SalesReport sales = vendasPorPeriodo(storeId, startDate, endDate);
         List<TopSellingProduct> topProducts = produtosMaisVendidos(storeId, startDate, endDate, 5);

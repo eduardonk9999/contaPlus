@@ -1,5 +1,7 @@
 package com.contaplus.api.report;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +11,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/reports")
+@Tag(name = "Relatórios", description = "Relatórios e dashboard")
 public class ReportController {
 
     private final ReportService reportService;

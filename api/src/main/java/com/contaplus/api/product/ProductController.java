@@ -1,6 +1,8 @@
 package com.contaplus.api.product;
 
 import com.contaplus.api.common.PageResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -16,6 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/products")
+@Tag(name = "Produtos", description = "Gerenciamento de produtos e estoque")
 public class ProductController {
 
     private final ProductService service;

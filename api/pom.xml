@@ -83,6 +83,13 @@
 			<version>8.0</version>
 		</dependency>
 
+		<!-- OpenAPI / Swagger -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.6.0</version>
+		</dependency>
+
 		<!-- Redis Cache -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
