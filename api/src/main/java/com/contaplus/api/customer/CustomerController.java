@@ -1,8 +1,10 @@
 package com.contaplus.api.customer;
 
 import com.contaplus.api.common.PageResponse;
+import com.contaplus.api.security.StoreAuthorizationService;
 import com.contaplus.api.transaction.Transaction;
 import com.contaplus.api.transaction.TransactionStatus;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,17 +20,21 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/customers")
+@Tag(name = "Clientes", description = "Gerenciamento de clientes")
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final StoreAuthorizationService storeAuth;
 
-    CustomerController(CustomerService customerService) {
+    CustomerController(CustomerService customerService, StoreAuthorizationService storeAuth) {
         this.customerService = customerService;
+        this.storeAuth = storeAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CustomerResponse criar(@Valid @RequestBody CriarCustomerRequest request) {
+        storeAuth.validateStoreAccess(request.storeId());
         CustomerService.CriarCustomerRequest serviceRequest = new CustomerService.CriarCustomerRequest(
             request.storeId(),
             request.name(),
@@ -45,12 +51,13 @@ public class CustomerController {
     @GetMapping("/{id}")
     public CustomerResponse buscarPorId(@PathVariable UUID id) {
         Customer customer = customerService.buscarPorId(id);
+        storeAuth.validateStoreAccess(customer.getStoreId());
         return toResponse(customer);
     }
 
     @GetMapping
     public PageResponse<CustomerResponse> listar(
-            @RequestParam UUID storeId,
+            @RequestParam(required = false) UUID storeId,
             @RequestParam(defaultValue = "false") boolean includeInactive,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
@@ -58,19 +65,25 @@ public class CustomerController {
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
+        UUID authorizedStoreId = storeId != null ? storeId : storeAuth.getCurrentUserStoreId();
+        storeAuth.validateStoreAccess(authorizedStoreId);
+
         Sort sort = sortDir.equalsIgnoreCase("desc")
             ? Sort.by(sortBy).descending()
             : Sort.by(sortBy).ascending();
         PageRequest pageable = PageRequest.of(page, size, sort);
 
         return PageResponse.from(
-            customerService.listarPorStorePaginado(storeId, includeInactive, search, pageable),
+            customerService.listarPorStorePaginado(authorizedStoreId, includeInactive, search, pageable),
             this::toResponse
         );
     }
 
     @PutMapping("/{id}")
     public CustomerResponse atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarCustomerRequest request) {
+        Customer existing = customerService.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
+
         CustomerService.AtualizarCustomerRequest serviceRequest = new CustomerService.AtualizarCustomerRequest(
             request.name(),
             request.phone(),
@@ -86,11 +99,15 @@ public class CustomerController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void desativar(@PathVariable UUID id) {
+        Customer existing = customerService.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
         customerService.desativar(id);
     }
 
     @GetMapping("/{id}/purchases")
     public List<CustomerPurchaseResponse> historicoCompras(@PathVariable UUID id) {
+        Customer customer = customerService.buscarPorId(id);
+        storeAuth.validateStoreAccess(customer.getStoreId());
         return customerService.buscarHistoricoCompras(id).stream()
             .map(this::toPurchaseResponse)
             .toList();

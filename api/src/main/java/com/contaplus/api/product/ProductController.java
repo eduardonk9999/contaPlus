@@ -1,6 +1,7 @@
 package com.contaplus.api.product;
 
 import com.contaplus.api.common.PageResponse;
+import com.contaplus.api.security.StoreAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -10,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -22,14 +24,17 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService service;
+    private final StoreAuthorizationService storeAuth;
 
-    ProductController(ProductService service) {
+    ProductController(ProductService service, StoreAuthorizationService storeAuth) {
         this.service = service;
+        this.storeAuth = storeAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProductResponse criar(@Valid @RequestBody CriarProductRequest request) {
+        storeAuth.validateStoreAccess(request.storeId());
         Product product = service.criar(
             request.storeId(),
             request.name(),
@@ -45,12 +50,13 @@ public class ProductController {
     @GetMapping("/{id}")
     public ProductResponse buscarPorId(@PathVariable UUID id) {
         Product product = service.buscarPorId(id);
+        storeAuth.validateStoreAccess(product.getStoreId());
         return toResponse(product);
     }
 
     @GetMapping
     public PageResponse<ProductResponse> listarPorStore(
-            @RequestParam UUID storeId,
+            @RequestParam(required = false) UUID storeId,
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) UUID categoryId,
@@ -63,13 +69,16 @@ public class ProductController {
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
+        UUID authorizedStoreId = storeId != null ? storeId : storeAuth.getCurrentUserStoreId();
+        storeAuth.validateStoreAccess(authorizedStoreId);
+
         Sort sort = sortDir.equalsIgnoreCase("desc")
             ? Sort.by(sortBy).descending()
             : Sort.by(sortBy).ascending();
         PageRequest pageable = PageRequest.of(page, size, sort);
 
         ProductFilter filter = new ProductFilter(
-            storeId, search, categoryId, type,
+            authorizedStoreId, search, categoryId, type,
             active != null ? active : true,
             minPrice, maxPrice, lowStock
         );
@@ -82,6 +91,8 @@ public class ProductController {
 
     @PutMapping("/{id}")
     public ProductResponse atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarProductRequest request) {
+        Product existing = service.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
         Product product = service.atualizar(
             id,
             request.name(),
@@ -97,7 +108,10 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public void desativar(@PathVariable UUID id) {
+        Product existing = service.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
         service.desativar(id);
     }
 

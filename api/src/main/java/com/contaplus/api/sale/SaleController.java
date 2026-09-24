@@ -2,6 +2,7 @@ package com.contaplus.api.sale;
 
 import com.contaplus.api.common.PageResponse;
 import com.contaplus.api.product.StockUnit;
+import com.contaplus.api.security.StoreAuthorizationService;
 import com.contaplus.api.transaction.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,15 +28,18 @@ public class SaleController {
 
     private final SaleService saleService;
     private final SalePreviewService previewService;
+    private final StoreAuthorizationService storeAuth;
 
-    SaleController(SaleService saleService, SalePreviewService previewService) {
+    SaleController(SaleService saleService, SalePreviewService previewService, StoreAuthorizationService storeAuth) {
         this.saleService = saleService;
         this.previewService = previewService;
+        this.storeAuth = storeAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public SaleResponse confirmar(@Valid @RequestBody ConfirmarVendaRequest request) {
+        storeAuth.validateStoreAccess(request.storeId());
         SaleService.ConfirmarVendaRequest serviceRequest = new SaleService.ConfirmarVendaRequest(
             request.storeId(),
             request.idempotencyKey(),
@@ -55,6 +59,7 @@ public class SaleController {
 
     @PostMapping("/preview")
     public SalePreviewService.SalePreview preview(@Valid @RequestBody PreviewRequest request) {
+        storeAuth.validateStoreAccess(request.storeId());
         SalePreviewService.PreviewVendaRequest serviceRequest = new SalePreviewService.PreviewVendaRequest(
             request.storeId(),
             request.items().stream()
@@ -68,18 +73,21 @@ public class SaleController {
     @GetMapping("/{id}")
     public SaleResponse buscarPorId(@PathVariable UUID id) {
         Transaction transaction = saleService.buscarPorId(id);
+        storeAuth.validateStoreAccess(transaction.getStoreId());
         return toResponse(transaction);
     }
 
     @PutMapping("/{id}/cancel")
     public SaleResponse cancelar(@PathVariable UUID id) {
-        Transaction transaction = saleService.cancelarVenda(id);
+        Transaction transaction = saleService.buscarPorId(id);
+        storeAuth.validateStoreAccess(transaction.getStoreId());
+        transaction = saleService.cancelarVenda(id);
         return toResponse(transaction);
     }
 
     @GetMapping
     public PageResponse<SaleResponse> listarPorStore(
-            @RequestParam UUID storeId,
+            @RequestParam(required = false) UUID storeId,
             @RequestParam(required = false) TransactionStatus status,
             @RequestParam(required = false) UUID customerId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
@@ -89,10 +97,13 @@ public class SaleController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
+        UUID authorizedStoreId = storeId != null ? storeId : storeAuth.getCurrentUserStoreId();
+        storeAuth.validateStoreAccess(authorizedStoreId);
+
         PageRequest pageable = PageRequest.of(page, size, Sort.by("occurredAt").descending());
 
         TransactionFilter filter = new TransactionFilter(
-            storeId, TransactionType.SALE, status,
+            authorizedStoreId, TransactionType.SALE, status,
             customerId, null,
             startDate, endDate,
             minAmount, maxAmount

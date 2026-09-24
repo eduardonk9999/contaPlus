@@ -1,12 +1,15 @@
 package com.contaplus.api.supplier;
 
 import com.contaplus.api.common.PageResponse;
+import com.contaplus.api.security.StoreAuthorizationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
@@ -14,17 +17,22 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/suppliers")
+@Tag(name = "Fornecedores", description = "Gerenciamento de fornecedores")
 public class SupplierController {
 
     private final SupplierService supplierService;
+    private final StoreAuthorizationService storeAuth;
 
-    SupplierController(SupplierService supplierService) {
+    SupplierController(SupplierService supplierService, StoreAuthorizationService storeAuth) {
         this.supplierService = supplierService;
+        this.storeAuth = storeAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public SupplierResponse criar(@Valid @RequestBody CriarSupplierRequest request) {
+        storeAuth.validateStoreAccess(request.storeId());
         SupplierService.CriarSupplierRequest serviceRequest = new SupplierService.CriarSupplierRequest(
             request.storeId(),
             request.name(),
@@ -42,12 +50,13 @@ public class SupplierController {
     @GetMapping("/{id}")
     public SupplierResponse buscarPorId(@PathVariable UUID id) {
         Supplier supplier = supplierService.buscarPorId(id);
+        storeAuth.validateStoreAccess(supplier.getStoreId());
         return toResponse(supplier);
     }
 
     @GetMapping
     public PageResponse<SupplierResponse> listar(
-            @RequestParam UUID storeId,
+            @RequestParam(required = false) UUID storeId,
             @RequestParam(defaultValue = "false") boolean includeInactive,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
@@ -55,19 +64,26 @@ public class SupplierController {
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
+        UUID authorizedStoreId = storeId != null ? storeId : storeAuth.getCurrentUserStoreId();
+        storeAuth.validateStoreAccess(authorizedStoreId);
+
         Sort sort = sortDir.equalsIgnoreCase("desc")
             ? Sort.by(sortBy).descending()
             : Sort.by(sortBy).ascending();
         PageRequest pageable = PageRequest.of(page, size, sort);
 
         return PageResponse.from(
-            supplierService.listarPorStorePaginado(storeId, includeInactive, search, pageable),
+            supplierService.listarPorStorePaginado(authorizedStoreId, includeInactive, search, pageable),
             this::toResponse
         );
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public SupplierResponse atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarSupplierRequest request) {
+        Supplier existing = supplierService.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
+
         SupplierService.AtualizarSupplierRequest serviceRequest = new SupplierService.AtualizarSupplierRequest(
             request.name(),
             request.cnpj(),
@@ -83,7 +99,10 @@ public class SupplierController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public void desativar(@PathVariable UUID id) {
+        Supplier existing = supplierService.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
         supplierService.desativar(id);
     }
 

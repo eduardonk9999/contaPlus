@@ -1,5 +1,6 @@
 package com.contaplus.api.report;
 
+import com.contaplus.api.security.StoreAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -15,9 +16,11 @@ import java.util.UUID;
 public class ReportController {
 
     private final ReportService reportService;
+    private final StoreAuthorizationService storeAuth;
 
-    ReportController(ReportService reportService) {
+    ReportController(ReportService reportService, StoreAuthorizationService storeAuth) {
         this.reportService = reportService;
+        this.storeAuth = storeAuth;
     }
 
     @GetMapping("/sales")
@@ -26,6 +29,7 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate
     ) {
+        storeAuth.validateStoreAccess(storeId);
         return reportService.vendasPorPeriodo(storeId, startDate, endDate);
     }
 
@@ -36,16 +40,19 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
             @RequestParam(defaultValue = "10") int limit
     ) {
+        storeAuth.validateStoreAccess(storeId);
         return reportService.produtosMaisVendidos(storeId, startDate, endDate, limit);
     }
 
     @GetMapping("/margins")
     public List<ReportService.ProductMarginReport> margemPorProduto(@RequestParam UUID storeId) {
+        storeAuth.validateStoreAccess(storeId);
         return reportService.margemPorProduto(storeId);
     }
 
     @GetMapping("/low-stock")
     public List<ReportService.LowStockProduct> estoqueBaixo(@RequestParam UUID storeId) {
+        storeAuth.validateStoreAccess(storeId);
         return reportService.produtosEstoqueBaixo(storeId);
     }
 
@@ -55,6 +62,7 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate
     ) {
+        storeAuth.validateStoreAccess(storeId);
         return reportService.movimentacoesEstoque(storeId, startDate, endDate);
     }
 
@@ -64,6 +72,7 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate
     ) {
+        storeAuth.validateStoreAccess(storeId);
         return reportService.dashboard(storeId, startDate, endDate);
     }
 
@@ -73,6 +82,7 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate
     ) {
+        storeAuth.validateStoreAccess(storeId);
         return reportService.vendasPorCategoria(storeId, startDate, endDate);
     }
 }

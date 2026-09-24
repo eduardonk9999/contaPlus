@@ -1,11 +1,13 @@
 package com.contaplus.api.payment;
 
+import com.contaplus.api.security.StoreAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,15 +19,19 @@ import java.util.UUID;
 public class PaymentMethodController {
 
     private final PaymentMethodService service;
+    private final StoreAuthorizationService storeAuth;
 
-    PaymentMethodController(PaymentMethodService service) {
+    PaymentMethodController(PaymentMethodService service, StoreAuthorizationService storeAuth) {
         this.service = service;
+        this.storeAuth = storeAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Criar forma de pagamento")
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public PaymentMethodResponse criar(@Valid @RequestBody CriarPaymentMethodRequest request) {
+        storeAuth.validateStoreAccess(request.storeId());
         PaymentMethod pm = service.criar(
             request.storeId(),
             request.name(),
@@ -38,26 +44,33 @@ public class PaymentMethodController {
     @GetMapping("/{id}")
     @Operation(summary = "Buscar forma de pagamento por ID")
     public PaymentMethodResponse buscarPorId(@PathVariable UUID id) {
-        return toResponse(service.buscarPorId(id));
+        PaymentMethod pm = service.buscarPorId(id);
+        storeAuth.validateStoreAccess(pm.getStoreId());
+        return toResponse(pm);
     }
 
     @GetMapping
     @Operation(summary = "Listar formas de pagamento da loja")
     public List<PaymentMethodResponse> listarPorStore(
-            @RequestParam UUID storeId,
+            @RequestParam(required = false) UUID storeId,
             @RequestParam(defaultValue = "false") boolean includeInactive
     ) {
-        return service.listarPorStore(storeId, includeInactive).stream()
+        UUID authorizedStoreId = storeId != null ? storeId : storeAuth.getCurrentUserStoreId();
+        storeAuth.validateStoreAccess(authorizedStoreId);
+        return service.listarPorStore(authorizedStoreId, includeInactive).stream()
             .map(this::toResponse)
             .toList();
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar forma de pagamento")
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public PaymentMethodResponse atualizar(
             @PathVariable UUID id,
             @Valid @RequestBody AtualizarPaymentMethodRequest request
     ) {
+        PaymentMethod existing = service.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
         PaymentMethod pm = service.atualizar(
             id,
             request.name(),
@@ -70,7 +83,10 @@ public class PaymentMethodController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Desativar forma de pagamento")
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public void desativar(@PathVariable UUID id) {
+        PaymentMethod existing = service.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
         service.desativar(id);
     }
 

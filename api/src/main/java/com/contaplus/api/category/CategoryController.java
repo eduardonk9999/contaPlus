@@ -1,9 +1,12 @@
 package com.contaplus.api.category;
 
+import com.contaplus.api.security.StoreAuthorizationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
@@ -12,17 +15,22 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/categories")
+@Tag(name = "Categorias", description = "Gerenciamento de categorias de produtos")
 public class CategoryController {
 
     private final CategoryService categoryService;
+    private final StoreAuthorizationService storeAuth;
 
-    CategoryController(CategoryService categoryService) {
+    CategoryController(CategoryService categoryService, StoreAuthorizationService storeAuth) {
         this.categoryService = categoryService;
+        this.storeAuth = storeAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public CategoryResponse criar(@Valid @RequestBody CriarCategoryRequest request) {
+        storeAuth.validateStoreAccess(request.storeId());
         CategoryService.CriarCategoryRequest serviceRequest = new CategoryService.CriarCategoryRequest(
             request.storeId(),
             request.name(),
@@ -37,21 +45,28 @@ public class CategoryController {
     @GetMapping("/{id}")
     public CategoryResponse buscarPorId(@PathVariable UUID id) {
         Category category = categoryService.buscarPorId(id);
+        storeAuth.validateStoreAccess(category.getStoreId());
         return toResponse(category);
     }
 
     @GetMapping
     public List<CategoryResponse> listar(
-            @RequestParam UUID storeId,
+            @RequestParam(required = false) UUID storeId,
             @RequestParam(defaultValue = "false") boolean includeInactive
     ) {
-        return categoryService.listarPorStore(storeId, includeInactive).stream()
+        UUID authorizedStoreId = storeId != null ? storeId : storeAuth.getCurrentUserStoreId();
+        storeAuth.validateStoreAccess(authorizedStoreId);
+        return categoryService.listarPorStore(authorizedStoreId, includeInactive).stream()
             .map(this::toResponse)
             .toList();
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public CategoryResponse atualizar(@PathVariable UUID id, @Valid @RequestBody AtualizarCategoryRequest request) {
+        Category existing = categoryService.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
+
         CategoryService.AtualizarCategoryRequest serviceRequest = new CategoryService.AtualizarCategoryRequest(
             request.name(),
             request.description(),
@@ -64,7 +79,10 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public void desativar(@PathVariable UUID id) {
+        Category existing = categoryService.buscarPorId(id);
+        storeAuth.validateStoreAccess(existing.getStoreId());
         categoryService.desativar(id);
     }
 

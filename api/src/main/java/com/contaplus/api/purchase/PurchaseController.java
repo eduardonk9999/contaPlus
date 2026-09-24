@@ -2,7 +2,9 @@ package com.contaplus.api.purchase;
 
 import com.contaplus.api.common.PageResponse;
 import com.contaplus.api.product.StockUnit;
+import com.contaplus.api.security.StoreAuthorizationService;
 import com.contaplus.api.transaction.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -11,6 +13,7 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -20,17 +23,22 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/purchases")
+@Tag(name = "Compras", description = "Registro de compras/entradas")
 public class PurchaseController {
 
     private final PurchaseService purchaseService;
+    private final StoreAuthorizationService storeAuth;
 
-    PurchaseController(PurchaseService purchaseService) {
+    PurchaseController(PurchaseService purchaseService, StoreAuthorizationService storeAuth) {
         this.purchaseService = purchaseService;
+        this.storeAuth = storeAuth;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@storeAuthorizationService.isOwner()")
     public PurchaseResponse registrar(@Valid @RequestBody RegistrarCompraRequest request) {
+        storeAuth.validateStoreAccess(request.storeId());
         PurchaseService.RegistrarCompraRequest serviceRequest = new PurchaseService.RegistrarCompraRequest(
             request.storeId(),
             request.idempotencyKey(),
@@ -50,12 +58,13 @@ public class PurchaseController {
     @GetMapping("/{id}")
     public PurchaseResponse buscarPorId(@PathVariable UUID id) {
         Transaction transaction = purchaseService.buscarPorId(id);
+        storeAuth.validateStoreAccess(transaction.getStoreId());
         return toResponse(transaction);
     }
 
     @GetMapping
     public PageResponse<PurchaseResponse> listarPorStore(
-            @RequestParam UUID storeId,
+            @RequestParam(required = false) UUID storeId,
             @RequestParam(required = false) UUID supplierId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
@@ -64,10 +73,13 @@ public class PurchaseController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
+        UUID authorizedStoreId = storeId != null ? storeId : storeAuth.getCurrentUserStoreId();
+        storeAuth.validateStoreAccess(authorizedStoreId);
+
         PageRequest pageable = PageRequest.of(page, size, Sort.by("occurredAt").descending());
 
         TransactionFilter filter = new TransactionFilter(
-            storeId, TransactionType.PURCHASE, null,
+            authorizedStoreId, TransactionType.PURCHASE, null,
             null, supplierId,
             startDate, endDate,
             minAmount, maxAmount

@@ -2,6 +2,18 @@ spring:
   profiles:
     active: prod
 
+# Desabilitar Swagger em produção
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# CORS restritivo em produção (configurar via env CORS_ORIGINS)
+cors:
+  allowed-origins: ${CORS_ORIGINS}
+  allow-credentials: true
+
 logging:
   level:
     root: INFO

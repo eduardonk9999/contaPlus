@@ -52,12 +52,22 @@ spring.data.redis:
 springdoc:
   api-docs:
     path: /v3/api-docs
+    enabled: ${SWAGGER_ENABLED:true}
   swagger-ui:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
     doc-expansion: none
+    enabled: ${SWAGGER_ENABLED:true}
   show-actuator: false
+
+cors:
+  allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+  allowed-headers: Authorization,Content-Type,X-Requested-With,Accept,Origin,X-Idempotency-Key
+  exposed-headers: X-Total-Count,X-Page-Size,X-Current-Page
+  allow-credentials: true
+  max-age: 3600
 
 logging:
   level:
