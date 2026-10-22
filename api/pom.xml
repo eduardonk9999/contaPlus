@@ -43,6 +43,12 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
+		<!-- No Spring Boot 4 a FlywayAutoConfiguration vive neste modulo;
+		     sem ele o Flyway nao roda as migrations (DB fica vazio). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-flyway</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
