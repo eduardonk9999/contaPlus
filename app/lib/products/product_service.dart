@@ -7,13 +7,19 @@ class ProductService {
 
   final ApiClient _api;
 
-  Future<PageResult<Product>> listar({String busca = '', int pagina = 0, int tamanho = 20}) async {
+  Future<PageResult<Product>> listar({
+    String busca = '',
+    int pagina = 0,
+    int tamanho = 20,
+    ProductType? tipo,
+  }) async {
     final query = Uri(queryParameters: {
       'page': '$pagina',
       'size': '$tamanho',
       'sortBy': 'name',
       'sortDir': 'asc',
       if (busca.isNotEmpty) 'search': busca,
+      if (tipo != null) 'type': tipo.api,
     }).query;
     final json = await _api.get('/v1/products?$query') as Map<String, dynamic>;
     return PageResult(
