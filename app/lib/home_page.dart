@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'login_page.dart';
 import 'models/auth_models.dart';
+import 'session/session_controller.dart';
 
-/// Tela provisória pós-login: só confirma que a autenticação funcionou,
-/// mostrando os dados que a API devolveu.
+/// Tela provisória pós-login: confirma a sessão mostrando os dados da API.
 class HomePage extends StatelessWidget {
   final UserAccount user;
   const HomePage({super.key, required this.user});
@@ -18,9 +17,7 @@ class HomePage extends StatelessWidget {
           IconButton(
             tooltip: 'Sair',
             icon: const Icon(Icons.logout),
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-            ),
+            onPressed: () => SessionScope.read(context).logout(),
           ),
         ],
       ),

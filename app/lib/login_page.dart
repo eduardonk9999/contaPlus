@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'home_page.dart';
-import 'services/auth_service.dart';
+import 'core/api_client.dart';
+import 'session/session_controller.dart';
 import 'theme.dart';
+import 'widgets/app_logo.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,7 +15,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
-  final _authService = AuthService();
 
   bool _carregando = false;
   bool _ocultarSenha = true;
@@ -27,29 +27,39 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _entrar() async {
-    FocusScope.of(context).unfocus(); // fecha o teclado
+    final email = _emailController.text.trim();
+    final senha = _senhaController.text;
+    if (email.isEmpty || senha.isEmpty) {
+      _mostrarErro('Preencha email e senha.');
+      return;
+    }
+
+    final session = SessionScope.read(context);
+    FocusScope.of(context).unfocus();
     setState(() => _carregando = true);
     try {
-      final result = await _authService.login(
-        _emailController.text.trim(),
-        _senhaController.text,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => HomePage(user: result.user)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red.shade700,
-          content: Text(e.toString()),
-        ),
-      );
+      // No sucesso a tela troca sozinha: o AuthGate reage à sessão.
+      await session.login(email, senha);
+    } on ApiException catch (e) {
+      _mostrarErro(e.message);
+    } catch (_) {
+      _mostrarErro('Algo deu errado. Tente de novo.');
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
+  }
+
+  void _mostrarErro(String mensagem) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade700,
+          content: Text(mensagem),
+        ),
+      );
   }
 
   @override
@@ -67,22 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo em "badge" azul arredondado.
-                  Center(
-                    child: Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        color: AppColors.azulBB,
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: Colors.white,
-                        size: 38,
-                      ),
-                    ),
-                  ),
+                  const Center(child: AppLogo()),
                   const SizedBox(height: 20),
                   Text(
                     'Conta+',
@@ -106,6 +101,7 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
+                    autocorrect: false,
                     decoration: const InputDecoration(
                       hintText: 'Email',
                       prefixIcon: Icon(Icons.mail_outline_rounded),
