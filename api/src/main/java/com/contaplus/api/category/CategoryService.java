@@ -1,12 +1,9 @@
 package com.contaplus.api.category;
 
-import com.contaplus.api.cache.CacheNames;
 import com.contaplus.api.exception.ResourceNotFoundException;
 import com.contaplus.api.store.Store;
 import com.contaplus.api.store.StoreService;
 import jakarta.transaction.Transactional;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +21,6 @@ public class CategoryService {
     }
 
     @Transactional
-    @CacheEvict(value = CacheNames.CATEGORIES, key = "#request.storeId()")
     public Category criar(CriarCategoryRequest request) {
         Store store = storeService.buscarPorId(request.storeId());
 
@@ -47,7 +43,6 @@ public class CategoryService {
             .orElseThrow(() -> new ResourceNotFoundException("Category", id));
     }
 
-    @Cacheable(value = CacheNames.CATEGORIES, key = "#storeId + '-' + #includeInactive")
     public List<Category> listarPorStore(UUID storeId, boolean includeInactive) {
         if (includeInactive) {
             return categoryRepository.findByStore_Id(storeId);
@@ -56,7 +51,6 @@ public class CategoryService {
     }
 
     @Transactional
-    @CacheEvict(value = CacheNames.CATEGORIES, allEntries = true)
     public Category atualizar(UUID id, AtualizarCategoryRequest request) {
         Category category = buscarPorId(id);
 
@@ -70,7 +64,6 @@ public class CategoryService {
     }
 
     @Transactional
-    @CacheEvict(value = CacheNames.CATEGORIES, allEntries = true)
     public void desativar(UUID id) {
         Category category = buscarPorId(id);
         category.deactivate();

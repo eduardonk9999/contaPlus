@@ -29,13 +29,9 @@ public class CacheConfig {
             .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
             .disableCachingNullValues();
 
+        // Só cachear DTOs/records. Entidades JPA têm relações lazy que não sobrevivem
+        // à serialização JSON no Redis (quebra ao gravar e volta "solta" ao ler).
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-
-        // Products: 5 minutes (frequently updated)
-        cacheConfigurations.put(CacheNames.PRODUCTS, defaultConfig.entryTtl(Duration.ofMinutes(5)));
-
-        // Categories: 30 minutes (rarely updated)
-        cacheConfigurations.put(CacheNames.CATEGORIES, defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
         // Suppliers: 30 minutes (rarely updated)
         cacheConfigurations.put(CacheNames.SUPPLIERS, defaultConfig.entryTtl(Duration.ofMinutes(30)));
