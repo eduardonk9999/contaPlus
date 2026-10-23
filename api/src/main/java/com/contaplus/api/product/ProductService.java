@@ -29,20 +29,24 @@ public class ProductService {
 
     @Transactional
     public Product criar(UUID storeId, String name, ProductType type, Integer costPriceCents,
-                         Integer salePriceCents, StockUnit stockUnit, UUID categoryId) {
+                         Integer salePriceCents, StockUnit stockUnit, UUID categoryId,
+                         BigDecimal minStockQuantity) {
         Store store = storeService.buscarPorId(storeId);
 
         if (repository.existsByStore_IdAndNameIgnoreCaseAndActiveTrue(storeId, name)) {
-            throw new IllegalArgumentException("Product with name '" + name + "' already exists in this store");
+            throw new IllegalArgumentException("Já existe um produto chamado '" + name + "' nesta loja");
         }
 
         Product product = new Product(store, name, type, costPriceCents, salePriceCents, stockUnit);
+        if (minStockQuantity != null) {
+            product.setMinStockQuantity(minStockQuantity);
+        }
 
         if (categoryId != null) {
             Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
             if (!category.getStoreId().equals(storeId)) {
-                throw new IllegalArgumentException("Category does not belong to this store");
+                throw new IllegalArgumentException("A categoria escolhida não pertence a esta loja");
             }
             product.setCategory(category);
         }
@@ -86,9 +90,9 @@ public class ProductService {
                              Integer salePriceCents, StockUnit stockUnit, BigDecimal minStockQuantity, UUID categoryId) {
         Product product = buscarPorId(id);
 
-        var existing = repository.findByStore_IdAndNameIgnoreCase(product.getStoreId(), name);
+        var existing = repository.findByStore_IdAndNameIgnoreCaseAndActiveTrue(product.getStoreId(), name);
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
-            throw new IllegalArgumentException("Product with name '" + name + "' already exists in this store");
+            throw new IllegalArgumentException("Já existe um produto chamado '" + name + "' nesta loja");
         }
 
         product.update(name, type, costPriceCents, salePriceCents, stockUnit, minStockQuantity);
@@ -97,7 +101,7 @@ public class ProductService {
             Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", categoryId));
             if (!category.getStoreId().equals(product.getStoreId())) {
-                throw new IllegalArgumentException("Category does not belong to this store");
+                throw new IllegalArgumentException("A categoria escolhida não pertence a esta loja");
             }
             product.setCategory(category);
         } else {

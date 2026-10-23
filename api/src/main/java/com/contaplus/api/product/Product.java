@@ -148,6 +148,11 @@ public class Product {
         this.updatedAt = OffsetDateTime.now();
     }
 
+    public void setMinStockQuantity(BigDecimal minStockQuantity) {
+        this.minStockQuantity = minStockQuantity;
+        this.updatedAt = OffsetDateTime.now();
+    }
+
     public void deactivate() {
         this.active = false;
         this.updatedAt = OffsetDateTime.now();

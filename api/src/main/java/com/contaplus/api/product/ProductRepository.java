@@ -23,7 +23,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     Optional<Product> findByIdAndStore_Id(UUID id, UUID storeId);
 
-    Optional<Product> findByStore_IdAndNameIgnoreCase(UUID storeId, String name);
+    Optional<Product> findByStore_IdAndNameIgnoreCaseAndActiveTrue(UUID storeId, String name);
 
     boolean existsByStore_IdAndNameIgnoreCaseAndActiveTrue(UUID storeId, String name);
 }

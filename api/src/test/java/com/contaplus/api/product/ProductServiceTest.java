@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
@@ -49,6 +51,7 @@ public class ProductServiceTest {
             3000,
             5000,
             StockUnit.UNIT,
+            null,
             null
         );
 
@@ -61,18 +64,56 @@ public class ProductServiceTest {
     }
 
     @Test
+    void deveCriarProdutoComEstoqueMinimo() {
+        Product product = service.criar(store.getId(), "Refrigerante", ProductType.SELLABLE, 300, 600,
+            StockUnit.UNIT, null, BigDecimal.valueOf(12));
+
+        assertThat(product.getMinStockQuantity()).isEqualByComparingTo(BigDecimal.valueOf(12));
+    }
+
+    @Test
+    void deveOrdenarEBuscarIgnorandoAcentos() {
+        service.criar(store.getId(), "Banana", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
+        service.criar(store.getId(), "Água mineral", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
+        service.criar(store.getId(), "Abacaxi", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
+        var porNome = PageRequest.of(0, 10, Sort.by("name"));
+
+        var todos = service.listarComFiltros(
+            new ProductFilter(store.getId(), null, null, null, true, null, null, null), porNome);
+        var busca = service.listarComFiltros(
+            new ProductFilter(store.getId(), "agua", null, null, true, null, null, null), porNome);
+
+        assertThat(todos.getContent()).extracting(Product::getName)
+            .containsExactly("Abacaxi", "Água mineral", "Banana");
+        assertThat(busca.getContent()).extracting(Product::getName)
+            .containsExactly("Água mineral");
+    }
+
+    @Test
+    void devePermitirRecadastrarNomeDeProdutoDesativado() {
+        Product antigo = service.criar(store.getId(), "Água", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
+        service.desativar(antigo.getId());
+
+        Product novo = service.criar(store.getId(), "Água", ProductType.SELLABLE, 150, 300, StockUnit.UNIT, null, null);
+        Product editado = service.atualizar(novo.getId(), "Água", ProductType.SELLABLE, 150, 350,
+            StockUnit.UNIT, BigDecimal.ZERO, null);
+
+        assertThat(editado.getSalePriceCents()).isEqualTo(350);
+    }
+
+    @Test
     void deveRejeitarProdutoDuplicado() {
-        service.criar(store.getId(), "Produto Duplicado", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null);
+        service.criar(store.getId(), "Produto Duplicado", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
 
         assertThatThrownBy(() ->
-            service.criar(store.getId(), "Produto Duplicado", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null)
+            service.criar(store.getId(), "Produto Duplicado", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null)
         ).isInstanceOf(IllegalArgumentException.class)
-         .hasMessageContaining("already exists");
+         .hasMessageContaining("Já existe");
     }
 
     @Test
     void deveBuscarProdutoPorId() {
-        Product created = service.criar(store.getId(), "Produto Busca", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null);
+        Product created = service.criar(store.getId(), "Produto Busca", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
 
         Product found = service.buscarPorId(created.getId());
 
@@ -89,8 +130,8 @@ public class ProductServiceTest {
 
     @Test
     void deveListarProdutosAtivosDaStore() {
-        service.criar(store.getId(), "Produto 1", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null);
-        Product inativo = service.criar(store.getId(), "Produto 2", ProductType.SUPPLY, 50, 100, StockUnit.KG, null);
+        service.criar(store.getId(), "Produto 1", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
+        Product inativo = service.criar(store.getId(), "Produto 2", ProductType.SUPPLY, 50, 100, StockUnit.KG, null, null);
         service.desativar(inativo.getId());
 
         List<Product> ativos = service.listarPorStore(store.getId(), true);
@@ -102,7 +143,7 @@ public class ProductServiceTest {
 
     @Test
     void deveAtualizarProduto() {
-        Product created = service.criar(store.getId(), "Produto Original", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null);
+        Product created = service.criar(store.getId(), "Produto Original", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
 
         Product updated = service.atualizar(
             created.getId(),
@@ -123,7 +164,7 @@ public class ProductServiceTest {
 
     @Test
     void deveDesativarProduto() {
-        Product created = service.criar(store.getId(), "Produto Desativar", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null);
+        Product created = service.criar(store.getId(), "Produto Desativar", ProductType.SELLABLE, 100, 200, StockUnit.UNIT, null, null);
 
         service.desativar(created.getId());
 

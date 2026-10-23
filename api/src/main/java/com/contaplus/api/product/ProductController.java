@@ -5,6 +5,7 @@ import com.contaplus.api.security.StoreAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -42,7 +43,8 @@ public class ProductController {
             request.costPriceCents(),
             request.salePriceCents(),
             request.stockUnit() != null ? request.stockUnit() : StockUnit.UNIT,
-            request.categoryId()
+            request.categoryId(),
+            request.minStockQuantity()
         );
         return toResponse(product);
     }
@@ -138,7 +140,8 @@ public class ProductController {
         @NotNull(message = "costPriceCents is required") @Min(0) Integer costPriceCents,
         @NotNull(message = "salePriceCents is required") @Min(0) Integer salePriceCents,
         StockUnit stockUnit,
-        UUID categoryId
+        UUID categoryId,
+        @DecimalMin(value = "0", message = "minStockQuantity must be >= 0") BigDecimal minStockQuantity
     ) {}
 
     record AtualizarProductRequest(

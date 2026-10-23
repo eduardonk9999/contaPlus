@@ -26,10 +26,13 @@ public class SpecificationBuilder<T> {
         return this;
     }
 
+    /** "Contém", sem diferenciar maiúsculas nem acentos ("agua" encontra "Água"). */
     public SpecificationBuilder<T> like(String field, String value) {
         if (value != null && !value.isBlank()) {
-            specs.add((root, query, cb) ->
-                cb.like(cb.lower(root.get(field)), "%" + value.toLowerCase() + "%"));
+            specs.add((root, query, cb) -> cb.like(
+                cb.function("unaccent", String.class, cb.lower(root.get(field))),
+                cb.function("unaccent", String.class, cb.literal("%" + value.toLowerCase() + "%"))
+            ));
         }
         return this;
     }
