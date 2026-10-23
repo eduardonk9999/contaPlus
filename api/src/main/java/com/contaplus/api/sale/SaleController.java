@@ -1,6 +1,7 @@
 package com.contaplus.api.sale;
 
 import com.contaplus.api.common.PageResponse;
+import com.contaplus.api.payment.PaymentService;
 import com.contaplus.api.product.StockUnit;
 import com.contaplus.api.security.StoreAuthorizationService;
 import com.contaplus.api.transaction.*;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -52,8 +54,13 @@ public class SaleController {
             request.occurredAt(),
             request.customerId()
         );
+        List<PaymentService.PagamentoRequest> pagamentos = request.payments() == null
+            ? List.of()
+            : request.payments().stream()
+                .map(p -> new PaymentService.PagamentoRequest(p.paymentMethodId(), p.amountCents(), p.changeCents()))
+                .toList();
 
-        Transaction transaction = saleService.confirmarVenda(serviceRequest);
+        Transaction transaction = saleService.confirmarVenda(serviceRequest, pagamentos);
         return toResponse(transaction);
     }
 
@@ -161,7 +168,14 @@ public class SaleController {
         TransactionSource source,
         String originalInput,
         OffsetDateTime occurredAt,
-        UUID customerId
+        UUID customerId,
+        @Valid List<PagamentoItemRequest> payments
+    ) {}
+
+    record PagamentoItemRequest(
+        @NotNull(message = "paymentMethodId is required") UUID paymentMethodId,
+        @NotNull(message = "amountCents is required") @Min(1) Integer amountCents,
+        @Min(0) Integer changeCents
     ) {}
 
     record PreviewRequest(

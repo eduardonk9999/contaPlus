@@ -3,6 +3,7 @@ package com.contaplus.api.sale;
 import com.contaplus.api.customer.Customer;
 import com.contaplus.api.customer.CustomerRepository;
 import com.contaplus.api.exception.ResourceNotFoundException;
+import com.contaplus.api.payment.PaymentService;
 import com.contaplus.api.product.Product;
 import com.contaplus.api.product.ProductRepository;
 import com.contaplus.api.stock.StockService;
@@ -31,21 +32,34 @@ public class SaleService {
     private final CustomerRepository customerRepository;
     private final StoreService storeService;
     private final StockService stockService;
+    private final PaymentService paymentService;
 
     SaleService(TransactionRepository transactionRepository,
                 ProductRepository productRepository,
                 CustomerRepository customerRepository,
                 StoreService storeService,
-                StockService stockService) {
+                StockService stockService,
+                PaymentService paymentService) {
         this.transactionRepository = transactionRepository;
         this.productRepository = productRepository;
         this.customerRepository = customerRepository;
         this.storeService = storeService;
         this.stockService = stockService;
+        this.paymentService = paymentService;
     }
 
     @Transactional
     public Transaction confirmarVenda(ConfirmarVendaRequest request) {
+        return confirmarVenda(request, List.of());
+    }
+
+    /**
+     * Venda e pagamentos na mesma transação: se os pagamentos não cobrem o total,
+     * nada é gravado (nem a venda, nem a baixa de estoque). Repetir a mesma
+     * idempotencyKey devolve a venda já registrada, sem registrar pagamento de novo.
+     */
+    @Transactional
+    public Transaction confirmarVenda(ConfirmarVendaRequest request, List<PaymentService.PagamentoRequest> pagamentos) {
         Store store = storeService.buscarPorId(request.storeId());
 
         Optional<Transaction> existente = transactionRepository
@@ -77,9 +91,7 @@ public class SaleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", request.customerId()));
 
             if (!customer.getStoreId().equals(request.storeId())) {
-                throw new IllegalArgumentException(
-                    "Customer " + request.customerId() + " does not belong to store " + request.storeId()
-                );
+                throw new IllegalArgumentException("O cliente não pertence a esta loja");
             }
 
             transaction.setCustomer(customer);
@@ -92,13 +104,11 @@ public class SaleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product", itemReq.productId()));
 
             if (!product.getStoreId().equals(request.storeId())) {
-                throw new IllegalArgumentException(
-                    "Product " + itemReq.productId() + " does not belong to store " + request.storeId()
-                );
+                throw new IllegalArgumentException("O produto não pertence a esta loja");
             }
 
             if (!product.getActive()) {
-                throw new IllegalArgumentException("Product " + product.getName() + " is not active");
+                throw new IllegalArgumentException("O produto '" + product.getName() + "' está desativado");
             }
 
             TransactionItem item = new TransactionItem(transaction, product, itemReq.quantity());
@@ -115,6 +125,10 @@ public class SaleService {
             Product product = productsToUpdate.get(i);
 
             stockService.registrarVenda(store, product, savedTransaction, itemReq.quantity(), occurredAt);
+        }
+
+        if (!pagamentos.isEmpty()) {
+            paymentService.registrarPagamentos(savedTransaction.getId(), pagamentos);
         }
 
         return savedTransaction;

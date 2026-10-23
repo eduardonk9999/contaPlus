@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -33,20 +34,20 @@ public class PaymentService {
             .orElseThrow(() -> new ResourceNotFoundException("PaymentMethod", paymentMethodId));
 
         if (!paymentMethod.getStoreId().equals(transaction.getStoreId())) {
-            throw new IllegalArgumentException("Payment method does not belong to the same store as the transaction");
+            throw new IllegalArgumentException("A forma de pagamento não pertence a esta loja");
         }
 
         if (!paymentMethod.getActive()) {
-            throw new IllegalArgumentException("Payment method is not active");
+            throw new IllegalArgumentException("A forma de pagamento está desativada");
         }
 
         if (changeCents != null && changeCents > 0 && !paymentMethod.getAcceptsChange()) {
-            throw new IllegalArgumentException("This payment method does not accept change");
+            throw new IllegalArgumentException("Esta forma de pagamento não aceita troco");
         }
 
         int netAmount = amountCents - (changeCents != null ? changeCents : 0);
         if (netAmount <= 0) {
-            throw new IllegalArgumentException("Net payment amount must be positive");
+            throw new IllegalArgumentException("O valor pago precisa ser maior que o troco");
         }
 
         Payment payment = new Payment(transaction, paymentMethod, amountCents, changeCents);
@@ -66,22 +67,22 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("PaymentMethod", pag.paymentMethodId()));
 
             if (!pm.getStoreId().equals(transaction.getStoreId())) {
-                throw new IllegalArgumentException("Payment method " + pm.getName() + " does not belong to this store");
+                throw new IllegalArgumentException("A forma de pagamento '" + pm.getName() + "' não pertence a esta loja");
             }
 
             if (!pm.getActive()) {
-                throw new IllegalArgumentException("Payment method " + pm.getName() + " is not active");
+                throw new IllegalArgumentException("A forma de pagamento '" + pm.getName() + "' está desativada");
             }
 
             int changeCents = pag.changeCents() != null ? pag.changeCents() : 0;
 
             if (changeCents > 0 && !pm.getAcceptsChange()) {
-                throw new IllegalArgumentException("Payment method " + pm.getName() + " does not accept change");
+                throw new IllegalArgumentException("'" + pm.getName() + "' não aceita troco");
             }
 
             int netAmount = pag.amountCents() - changeCents;
             if (netAmount <= 0) {
-                throw new IllegalArgumentException("Net payment amount must be positive for " + pm.getName());
+                throw new IllegalArgumentException("O valor pago em '" + pm.getName() + "' precisa ser maior que o troco");
             }
 
             totalPago += netAmount;
@@ -89,8 +90,8 @@ public class PaymentService {
 
         if (totalPago < transaction.getTotalAmountCents()) {
             throw new IllegalArgumentException(
-                "Total payment (" + totalPago + " cents) is less than transaction total (" +
-                transaction.getTotalAmountCents() + " cents)"
+                "O valor pago (" + reais(totalPago) + ") não cobre o total da venda (" +
+                reais(transaction.getTotalAmountCents()) + ")"
             );
         }
 
@@ -108,6 +109,10 @@ public class PaymentService {
 
     public List<Payment> listarPorTransacao(UUID transactionId) {
         return paymentRepository.findByTransaction_Id(transactionId);
+    }
+
+    private static String reais(int centavos) {
+        return String.format(Locale.of("pt", "BR"), "R$ %,.2f", centavos / 100.0);
     }
 
     public record PagamentoRequest(

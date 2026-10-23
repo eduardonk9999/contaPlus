@@ -2,6 +2,11 @@ package com.contaplus.api.sale;
 
 import com.contaplus.api.DatabaseCleaner;
 import com.contaplus.api.TestcontainersConfiguration;
+import com.contaplus.api.payment.Payment;
+import com.contaplus.api.payment.PaymentMethodRepository;
+import com.contaplus.api.payment.PaymentMethodService;
+import com.contaplus.api.payment.PaymentRepository;
+import com.contaplus.api.payment.PaymentService;
 import com.contaplus.api.product.Product;
 import com.contaplus.api.product.ProductRepository;
 import com.contaplus.api.product.ProductType;
@@ -45,6 +50,15 @@ public class SaleServiceTest {
     @Autowired
     JdbcTemplate jdbc;
 
+    @Autowired
+    PaymentMethodService paymentMethodService;
+
+    @Autowired
+    PaymentMethodRepository paymentMethodRepository;
+
+    @Autowired
+    PaymentRepository paymentRepository;
+
     Store store;
     Product product1;
     Product product2;
@@ -54,6 +68,7 @@ public class SaleServiceTest {
         DatabaseCleaner.limpar(jdbc);
 
         store = storeRepository.save(new Store("Loja Vendas"));
+        paymentMethodService.criarPadroesParaLoja(store);
 
         product1 = new Product(store, "Camiseta", ProductType.SELLABLE, 3000, 5000, StockUnit.UNIT);
         product1.adjustStock(BigDecimal.valueOf(10));
@@ -211,7 +226,7 @@ public class SaleServiceTest {
 
         SalePreviewService.SalePreview preview = previewService.calcularPreview(request);
 
-        assertThat(preview.warnings()).anyMatch(w -> w.contains("negative stock"));
+        assertThat(preview.warnings()).anyMatch(w -> w.contains("estoque negativo"));
     }
 
     @Test
@@ -254,7 +269,7 @@ public class SaleServiceTest {
 
         assertThatThrownBy(() -> saleService.confirmarVenda(request))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("not active");
+            .hasMessageContaining("desativado");
     }
 
     @Test
@@ -277,6 +292,60 @@ public class SaleServiceTest {
 
         assertThatThrownBy(() -> saleService.confirmarVenda(request))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("does not belong");
+            .hasMessageContaining("não pertence");
+    }
+
+    @Test
+    void deveRegistrarVendaComPagamentoETroco() {
+        var request = vendaDe(product1, 2);
+
+        Transaction venda = saleService.confirmarVenda(request,
+            List.of(new PaymentService.PagamentoRequest(formaDePagamento("Dinheiro"), 15000, 5000)));
+
+        List<Payment> pagamentos = paymentRepository.findByTransaction_Id(venda.getId());
+        assertThat(pagamentos).hasSize(1);
+        assertThat(pagamentos.get(0).getNetAmountCents()).isEqualTo(10000);
+        assertThat(pagamentos.get(0).getChangeCents()).isEqualTo(5000);
+    }
+
+    @Test
+    void naoGravaNadaSeOPagamentoNaoCobreOTotal() {
+        var request = vendaDe(product1, 2);
+
+        assertThatThrownBy(() -> saleService.confirmarVenda(request,
+                List.of(new PaymentService.PagamentoRequest(formaDePagamento("PIX"), 5000, 0))))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("não cobre o total");
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM transactions", Integer.class)).isZero();
+        Product semBaixa = productRepository.findById(product1.getId()).orElseThrow();
+        assertThat(semBaixa.getStockQuantity()).isEqualByComparingTo(BigDecimal.valueOf(10));
+    }
+
+    @Test
+    void repetirAMesmaVendaNaoDuplicaOPagamento() {
+        var request = vendaDe(product1, 1);
+        var pix = List.of(new PaymentService.PagamentoRequest(formaDePagamento("PIX"), 5000, 0));
+
+        Transaction primeira = saleService.confirmarVenda(request, pix);
+        Transaction segunda = saleService.confirmarVenda(request, pix);
+
+        assertThat(segunda.getId()).isEqualTo(primeira.getId());
+        assertThat(paymentRepository.findByTransaction_Id(primeira.getId())).hasSize(1);
+    }
+
+    private SaleService.ConfirmarVendaRequest vendaDe(Product produto, int quantidade) {
+        return new SaleService.ConfirmarVendaRequest(
+            store.getId(), UUID.randomUUID(), "Venda",
+            List.of(new SaleService.ItemVendaRequest(produto.getId(), BigDecimal.valueOf(quantidade))),
+            TransactionSource.MANUAL, null, OffsetDateTime.now(), null
+        );
+    }
+
+    private UUID formaDePagamento(String nome) {
+        return paymentMethodRepository.findByStore_IdAndActiveTrue(store.getId()).stream()
+            .filter(pm -> pm.getName().equals(nome))
+            .findFirst().orElseThrow()
+            .getId();
     }
 }

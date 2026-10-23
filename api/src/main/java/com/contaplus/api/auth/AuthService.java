@@ -1,5 +1,6 @@
 package com.contaplus.api.auth;
 
+import com.contaplus.api.payment.PaymentMethodService;
 import com.contaplus.api.security.JwtService;
 import com.contaplus.api.store.Store;
 import com.contaplus.api.store.StoreRepository;
@@ -30,6 +31,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final GoogleIdTokenVerifier googleVerifier;
+    private final PaymentMethodService paymentMethodService;
 
     public AuthService(
             UserRepository userRepository,
@@ -37,6 +39,7 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             AuthenticationManager authenticationManager,
+            PaymentMethodService paymentMethodService,
             @Value("${google.client-id:}") String googleClientId
     ) {
         this.userRepository = userRepository;
@@ -44,6 +47,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.paymentMethodService = paymentMethodService;
 
         if (googleClientId != null && !googleClientId.isBlank()) {
             this.googleVerifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
@@ -62,6 +66,7 @@ public class AuthService {
 
         Store store = new Store(request.storeName());
         storeRepository.save(store);
+        paymentMethodService.criarPadroesParaLoja(store);
 
         User user = new User(
                 request.email(),
@@ -123,6 +128,7 @@ public class AuthService {
             String storeName = name != null ? "Loja de " + name : "Minha Loja";
             Store store = new Store(storeName);
             storeRepository.save(store);
+            paymentMethodService.criarPadroesParaLoja(store);
 
             user = User.createWithGoogle(email, name != null ? name : email, googleId, store);
             userRepository.save(user);

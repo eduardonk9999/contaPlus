@@ -33,13 +33,11 @@ public class SalePreviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product", itemReq.productId()));
 
             if (!product.getStoreId().equals(request.storeId())) {
-                throw new IllegalArgumentException(
-                    "Product " + itemReq.productId() + " does not belong to store " + request.storeId()
-                );
+                throw new IllegalArgumentException("O produto não pertence a esta loja");
             }
 
             if (!product.getActive()) {
-                warnings.add("Product '" + product.getName() + "' is not active");
+                warnings.add("'" + product.getName() + "' está desativado");
             }
 
             int itemTotalAmount = itemReq.quantity()
@@ -60,12 +58,11 @@ public class SalePreviewService {
 
             BigDecimal stockAfterSale = product.getStockQuantity().subtract(itemReq.quantity());
 
-            if (stockAfterSale.compareTo(product.getMinStockQuantity()) < 0) {
-                warnings.add("Product '" + product.getName() + "' will be below minimum stock level after sale");
-            }
-
             if (stockAfterSale.compareTo(BigDecimal.ZERO) < 0) {
-                warnings.add("Product '" + product.getName() + "' will have negative stock after sale: " + stockAfterSale);
+                warnings.add("'" + product.getName() + "' vai ficar com estoque negativo ("
+                    + stockAfterSale.stripTrailingZeros().toPlainString() + ")");
+            } else if (stockAfterSale.compareTo(product.getMinStockQuantity()) < 0) {
+                warnings.add("'" + product.getName() + "' vai ficar abaixo do estoque mínimo");
             }
 
             items.add(new SalePreviewItem(
