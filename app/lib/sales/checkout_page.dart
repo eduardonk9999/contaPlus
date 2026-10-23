@@ -19,11 +19,17 @@ class CheckoutPage extends StatefulWidget {
     required this.cart,
     required this.vendas,
     required this.storeId,
+    this.formaInicialId,
+    this.recebidoInicialCentavos,
   });
 
   final Cart cart;
   final SaleService vendas;
   final String storeId;
+
+  /// Forma de pagamento e valor entregue já ditos na frase (venda por voz).
+  final String? formaInicialId;
+  final int? recebidoInicialCentavos;
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -97,7 +103,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> _carregarFormas() async {
     try {
       final formas = await widget.vendas.formasPagamento();
-      if (mounted) setState(() => _formas = formas);
+      if (!mounted) return;
+      setState(() {
+        _formas = formas;
+        _forma ??= formas
+            .where((f) => f.id == widget.formaInicialId)
+            .firstOrNull;
+        final recebido = widget.recebidoInicialCentavos;
+        if (_forma?.aceitaTroco == true &&
+            recebido != null &&
+            _recebido.text.isEmpty) {
+          _recebido.text = formatarMoeda(recebido);
+        }
+      });
     } on ApiException catch (e) {
       if (mounted) setState(() => _erroFormas = e.message);
     }
@@ -105,15 +123,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   bool get _previewPronto => _preview != null && !_previewDesatualizado;
 
-  int get _total => _previewPronto ? _preview!.totalCentavos : _cart.totalCentavos;
+  int get _total =>
+      _previewPronto ? _preview!.totalCentavos : _cart.totalCentavos;
 
   /// Valor entregue em dinheiro; vazio significa "valor exato".
   int? get _recebidoCentavos =>
-      _forma?.aceitaTroco == true && _recebido.text.isNotEmpty ? centavosDoTexto(_recebido.text) : null;
+      _forma?.aceitaTroco == true && _recebido.text.isNotEmpty
+      ? centavosDoTexto(_recebido.text)
+      : null;
 
   int get _troco => (_recebidoCentavos ?? _total) - _total;
 
-  bool get _podeConfirmar => !_enviando && _previewPronto && _forma != null && _troco >= 0;
+  bool get _podeConfirmar =>
+      !_enviando && _previewPronto && _forma != null && _troco >= 0;
 
   Future<void> _confirmar() async {
     final forma = _forma!;
@@ -130,6 +152,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         forma: forma,
         valorPagoCentavos: pago,
         trocoCentavos: troco,
+        origem: _cart.origem,
       );
       if (!mounted) return;
       _concluida = true;
@@ -145,7 +168,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
     } on NetworkException {
       // A chave de idempotência continua a mesma enquanto o carrinho não muda.
-      _avisarErro('Sem resposta do servidor. Tente de novo: a venda não será registrada duas vezes.');
+      _avisarErro(
+        'Sem resposta do servidor. Tente de novo: a venda não será registrada duas vezes.',
+      );
     } on ApiException catch (e) {
       _avisarErro(e.message);
     } finally {
@@ -157,11 +182,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(backgroundColor: Colors.red.shade700, content: Text(mensagem)));
+      ..showSnackBar(
+        SnackBar(backgroundColor: Colors.red.shade700, content: Text(mensagem)),
+      );
   }
 
   Future<void> _editarQuantidade(CartItem item) async {
-    final quantidade = await pedirQuantidade(context, item.produto, atual: item.quantidade);
+    final quantidade = await pedirQuantidade(
+      context,
+      item.produto,
+      atual: item.quantidade,
+    );
     if (quantidade != null) _cart.definirQuantidade(item.produto, quantidade);
   }
 
@@ -179,7 +210,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
           for (final item in _cart.itens)
             _LinhaItem(
               item: item,
-              onMenos: () => _cart.definirQuantidade(item.produto, item.quantidade - 1),
+              onMenos: () =>
+                  _cart.definirQuantidade(item.produto, item.quantidade - 1),
               onMais: () => _cart.adicionar(item.produto),
               onEditar: () => _editarQuantidade(item),
             ),
@@ -188,16 +220,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
             _Falha(mensagem: _erroPreview!, onTentarDeNovo: _atualizarPreview),
           const _Secao('Pagamento'),
           if (_erroFormas != null)
-            _Falha(mensagem: _erroFormas!, onTentarDeNovo: () {
-              setState(() => _erroFormas = null);
-              _carregarFormas();
-            })
+            _Falha(
+              mensagem: _erroFormas!,
+              onTentarDeNovo: () {
+                setState(() => _erroFormas = null);
+                _carregarFormas();
+              },
+            )
           else if (_formas == null)
             const LinearProgressIndicator(minHeight: 2)
           else if (_formas!.isEmpty)
             Text(
               'Nenhuma forma de pagamento ativa na loja.',
-              style: texto.bodyMedium?.copyWith(color: AppColors.textoSecundario),
+              style: texto.bodyMedium?.copyWith(
+                color: AppColors.textoSecundario,
+              ),
             )
           else
             Wrap(
@@ -243,7 +280,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   const Spacer(),
                   Text(
                     formatarMoeda(_total),
-                    style: texto.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                    style: texto.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -263,9 +302,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ? const SizedBox(
                         height: 22,
                         width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : Text(_forma == null ? 'Escolha a forma de pagamento' : 'Confirmar venda'),
+                    : Text(
+                        _forma == null
+                            ? 'Escolha a forma de pagamento'
+                            : 'Confirmar venda',
+                      ),
               ),
             ],
           ),
@@ -276,12 +322,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
 }
 
 IconData _iconeDe(PaymentType tipo) => switch (tipo) {
-      PaymentType.cash => Icons.payments_outlined,
-      PaymentType.pix => Icons.qr_code_2_rounded,
-      PaymentType.debitCard || PaymentType.creditCard => Icons.credit_card_rounded,
-      PaymentType.transfer => Icons.account_balance_outlined,
-      PaymentType.other => Icons.more_horiz_rounded,
-    };
+  PaymentType.cash => Icons.payments_outlined,
+  PaymentType.pix => Icons.qr_code_2_rounded,
+  PaymentType.debitCard || PaymentType.creditCard => Icons.credit_card_rounded,
+  PaymentType.transfer => Icons.account_balance_outlined,
+  PaymentType.other => Icons.more_horiz_rounded,
+};
 
 class _Secao extends StatelessWidget {
   const _Secao(this.titulo);
@@ -295,9 +341,9 @@ class _Secao extends StatelessWidget {
       child: Text(
         titulo,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: AppColors.textoSecundario,
-              fontWeight: FontWeight.w600,
-            ),
+          color: AppColors.textoSecundario,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -340,7 +386,9 @@ class _LinhaItem extends StatelessWidget {
                   porUnidade
                       ? formatarMoeda(produto.precoVendaCentavos)
                       : '${formatarMoeda(produto.precoVendaCentavos)} / ${produto.unidade.sigla}',
-                  style: texto.bodySmall?.copyWith(color: AppColors.textoSecundario),
+                  style: texto.bodySmall?.copyWith(
+                    color: AppColors.textoSecundario,
+                  ),
                 ),
               ],
             ),
@@ -400,10 +448,17 @@ class _Avisos extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.warning_amber_rounded, size: 18, color: AppColors.alerta),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 18,
+                    color: AppColors.alerta,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(aviso, style: const TextStyle(color: AppColors.alerta)),
+                    child: Text(
+                      aviso,
+                      style: const TextStyle(color: AppColors.alerta),
+                    ),
                   ),
                 ],
               ),
@@ -427,9 +482,15 @@ class _Falha extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(mensagem, style: const TextStyle(color: AppColors.perigo)),
+            child: Text(
+              mensagem,
+              style: const TextStyle(color: AppColors.perigo),
+            ),
           ),
-          TextButton(onPressed: onTentarDeNovo, child: const Text('Tentar de novo')),
+          TextButton(
+            onPressed: onTentarDeNovo,
+            child: const Text('Tentar de novo'),
+          ),
         ],
       ),
     );
@@ -457,11 +518,17 @@ class _Troco extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(falta ? 'Faltam' : 'Troco', style: texto.titleMedium?.copyWith(color: cor)),
+          Text(
+            falta ? 'Faltam' : 'Troco',
+            style: texto.titleMedium?.copyWith(color: cor),
+          ),
           const Spacer(),
           Text(
             formatarMoeda(diferencaCentavos.abs()),
-            style: texto.titleLarge?.copyWith(color: cor, fontWeight: FontWeight.w700),
+            style: texto.titleLarge?.copyWith(
+              color: cor,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

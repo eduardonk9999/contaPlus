@@ -76,7 +76,7 @@ void main() {
       return _json(_usuario);
     });
 
-    expect(find.text('Olá, Eduardo Teste'), findsOneWidget);
+    expect(find.text('Olá, Eduardo'), findsOneWidget);
     expect(recebida!.url.path, '/v1/auth/me');
     expect(recebida!.headers['Authorization'], 'Bearer token-valido');
     expect(store.token, 'token-valido');
@@ -105,7 +105,7 @@ void main() {
     await tester.tap(find.text('Tentar de novo'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Olá, Eduardo Teste'), findsOneWidget);
+    expect(find.text('Olá, Eduardo'), findsOneWidget);
   });
 
   testWidgets('login salva o token e abre a home', (tester) async {
@@ -118,7 +118,7 @@ void main() {
 
     await _entrarCom(tester, 'teste@contaplus.dev', 'Teste123');
 
-    expect(find.text('Olá, Eduardo Teste'), findsOneWidget);
+    expect(find.text('Olá, Eduardo'), findsOneWidget);
     expect(recebida!.url.path, '/v1/auth/login');
     expect(jsonDecode(recebida!.body), {'email': 'teste@contaplus.dev', 'password': 'Teste123'});
     expect(store.token, 'token-novo');

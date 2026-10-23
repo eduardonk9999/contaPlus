@@ -13,14 +13,16 @@ class ProductService {
     int tamanho = 20,
     ProductType? tipo,
   }) async {
-    final query = Uri(queryParameters: {
-      'page': '$pagina',
-      'size': '$tamanho',
-      'sortBy': 'name',
-      'sortDir': 'asc',
-      if (busca.isNotEmpty) 'search': busca,
-      if (tipo != null) 'type': tipo.api,
-    }).query;
+    final query = Uri(
+      queryParameters: {
+        'page': '$pagina',
+        'size': '$tamanho',
+        'sortBy': 'name',
+        'sortDir': 'asc',
+        if (busca.isNotEmpty) 'search': busca,
+        if (tipo != null) 'type': tipo.api,
+      },
+    ).query;
     final json = await _api.get('/v1/products?$query') as Map<String, dynamic>;
     return PageResult(
       itens: (json['content'] as List)
@@ -29,6 +31,11 @@ class ProductService {
       pagina: json['page'] as int,
       ultima: json['last'] as bool,
     );
+  }
+
+  Future<Product> buscar(String id) async {
+    final json = await _api.get('/v1/products/$id');
+    return Product.fromJson(json as Map<String, dynamic>);
   }
 
   Future<Product> criar(String storeId, ProductInput dados) async {
@@ -64,6 +71,8 @@ class ProductService {
 
   Future<List<Category>> categorias() async {
     final json = await _api.get('/v1/categories') as List;
-    return json.map((item) => Category.fromJson(item as Map<String, dynamic>)).toList();
+    return json
+        .map((item) => Category.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 }

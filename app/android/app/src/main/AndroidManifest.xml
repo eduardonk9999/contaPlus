@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Lançamento por voz -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- allowBackup=false: um backup restaurado em outro aparelho traz o token cifrado
          sem a chave do Keystore (InvalidKeyException no flutter_secure_storage). -->
     <application
@@ -43,6 +46,10 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Android 11+: sem isso o app não enxerga o serviço de reconhecimento de fala -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
         </intent>
     </queries>
 </manifest>

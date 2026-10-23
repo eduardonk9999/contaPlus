@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/uuid.dart';
 import '../products/product_models.dart';
+import '../voice/voice_models.dart';
 
 enum PaymentType {
   cash('CASH'),
@@ -56,11 +57,16 @@ class Cart extends ChangeNotifier {
   final _itens = <String, CartItem>{};
   String _chave = gerarUuid();
 
+  /// Frase que montou este carrinho, quando a venda veio por voz ou texto.
+  /// Vai junto na venda (source/originalInput) e some ao limpar.
+  Interpretacao? origem;
+
   List<CartItem> get itens => _itens.values.toList(growable: false);
 
   bool get vazio => _itens.isEmpty;
 
-  int get totalCentavos => _itens.values.fold(0, (soma, item) => soma + item.totalCentavos);
+  int get totalCentavos =>
+      _itens.values.fold(0, (soma, item) => soma + item.totalCentavos);
 
   double quantidadeDe(String productId) => _itens[productId]?.quantidade ?? 0;
 
@@ -88,6 +94,7 @@ class Cart extends ChangeNotifier {
 
   void limpar() {
     _itens.clear();
+    origem = null;
     _mudou();
   }
 
@@ -125,7 +132,10 @@ class SaleResult {
   const SaleResult({required this.id, required this.totalCentavos});
 
   factory SaleResult.fromJson(Map<String, dynamic> json) {
-    return SaleResult(id: json['id'] as String, totalCentavos: json['totalAmountCents'] as int);
+    return SaleResult(
+      id: json['id'] as String,
+      totalCentavos: json['totalAmountCents'] as int,
+    );
   }
 
   final String id;

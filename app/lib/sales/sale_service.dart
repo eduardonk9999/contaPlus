@@ -1,4 +1,5 @@
 import '../core/api_client.dart';
+import '../voice/voice_models.dart';
 import 'sale_models.dart';
 
 /// Endpoints /v1/sales e /v1/payment-methods da API Conta+.
@@ -35,11 +36,16 @@ class SaleService {
     required PaymentMethod forma,
     required int valorPagoCentavos,
     required int trocoCentavos,
+    Interpretacao? origem,
   }) async {
     final json = await _api.post('/v1/sales', {
       'storeId': storeId,
       'idempotencyKey': chaveIdempotencia,
       'items': _itens(itens),
+      if (origem != null) ...{
+        'source': origem.fonte.api,
+        'originalInput': origem.frase,
+      },
       'payments': [
         {
           'paymentMethodId': forma.id,
@@ -52,6 +58,7 @@ class SaleService {
   }
 
   List<Map<String, dynamic>> _itens(List<CartItem> itens) => [
-        for (final item in itens) {'productId': item.produto.id, 'quantity': item.quantidade},
-      ];
+    for (final item in itens)
+      {'productId': item.produto.id, 'quantity': item.quantidade},
+  ];
 }

@@ -20,12 +20,16 @@ class SalePage extends StatefulWidget {
     required this.vendas,
     required this.cart,
     required this.storeId,
+    this.onFalar,
   });
 
   final ProductService produtos;
   final SaleService vendas;
   final Cart cart;
   final String storeId;
+
+  /// Abre o lançamento por voz.
+  final VoidCallback? onFalar;
 
   @override
   State<SalePage> createState() => _SalePageState();
@@ -149,6 +153,14 @@ class _SalePageState extends State<SalePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nova venda'),
+        actions: [
+          if (widget.onFalar != null)
+            IconButton(
+              tooltip: 'Vender falando',
+              icon: const Icon(Icons.mic_rounded),
+              onPressed: widget.onFalar,
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(64),
           child: Padding(
@@ -181,7 +193,8 @@ class _SalePageState extends State<SalePage> {
         builder: (context, _) => Column(
           children: [
             Expanded(child: _lista()),
-            if (!widget.cart.vazio) _BarraCarrinho(cart: widget.cart, onCobrar: _cobrar),
+            if (!widget.cart.vazio)
+              _BarraCarrinho(cart: widget.cart, onCobrar: _cobrar),
           ],
         ),
       ),
@@ -195,12 +208,17 @@ class _SalePageState extends State<SalePage> {
       return _Mensagem(
         titulo: 'Não foi possível carregar os produtos',
         texto: _erro!,
-        acao: FilledButton(onPressed: _recarregar, child: const Text('Tentar de novo')),
+        acao: FilledButton(
+          onPressed: _recarregar,
+          child: const Text('Tentar de novo'),
+        ),
       );
     }
     if (_produtos.isEmpty) {
       return _Mensagem(
-        titulo: _busca.isEmpty ? 'Nenhum produto à venda' : 'Nenhum produto encontrado',
+        titulo: _busca.isEmpty
+            ? 'Nenhum produto à venda'
+            : 'Nenhum produto encontrado',
         texto: _busca.isEmpty
             ? 'Cadastre os produtos que você vende na aba Produtos.'
             : 'Nada com “$_busca”. Tente outro nome.',
@@ -218,7 +236,9 @@ class _SalePageState extends State<SalePage> {
             child: Text(
               'Mostrando os $_tamanhoPagina primeiros. Use a busca para achar os outros.',
               textAlign: TextAlign.center,
-              style: texto.bodySmall?.copyWith(color: AppColors.textoSecundario),
+              style: texto.bodySmall?.copyWith(
+                color: AppColors.textoSecundario,
+              ),
             ),
           );
         }
@@ -234,7 +254,8 @@ class _SalePageState extends State<SalePage> {
   }
 }
 
-String rotuloQuantidade(double quantidade, StockUnit unidade) => unidade == StockUnit.unit
+String rotuloQuantidade(double quantidade, StockUnit unidade) =>
+    unidade == StockUnit.unit
     ? formatarQuantidade(quantidade)
     : '${formatarQuantidade(quantidade)} ${unidade.sigla}';
 
@@ -281,7 +302,10 @@ class _ItemVenda extends StatelessWidget {
           text: preco,
           children: [
             if (produto.semEstoque)
-              const TextSpan(text: ' · Sem estoque', style: TextStyle(color: AppColors.perigo)),
+              const TextSpan(
+                text: ' · Sem estoque',
+                style: TextStyle(color: AppColors.perigo),
+              ),
           ],
         ),
         style: texto.bodySmall?.copyWith(color: AppColors.textoSecundario),
@@ -295,10 +319,16 @@ class _ItemVenda extends StatelessWidget {
               ),
               child: Text(
                 rotuloQuantidade(noCarrinho, produto.unidade),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             )
-          : const Icon(Icons.add_circle_outline_rounded, color: AppColors.azulBB),
+          : const Icon(
+              Icons.add_circle_outline_rounded,
+              color: AppColors.azulBB,
+            ),
     );
   }
 }
@@ -328,11 +358,15 @@ class _BarraCarrinho extends StatelessWidget {
                 children: [
                   Text(
                     itens == 1 ? '1 item' : '$itens itens',
-                    style: texto.bodySmall?.copyWith(color: AppColors.textoSecundario),
+                    style: texto.bodySmall?.copyWith(
+                      color: AppColors.textoSecundario,
+                    ),
                   ),
                   Text(
                     formatarMoeda(cart.totalCentavos),
-                    style: texto.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    style: texto.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -366,7 +400,11 @@ class _Mensagem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.point_of_sale_outlined, size: 56, color: AppColors.textoSuave),
+            const Icon(
+              Icons.point_of_sale_outlined,
+              size: 56,
+              color: AppColors.textoSuave,
+            ),
             const SizedBox(height: 16),
             Text(
               titulo,
@@ -377,7 +415,9 @@ class _Mensagem extends StatelessWidget {
             Text(
               texto,
               textAlign: TextAlign.center,
-              style: estilo.bodyMedium?.copyWith(color: AppColors.textoSecundario),
+              style: estilo.bodyMedium?.copyWith(
+                color: AppColors.textoSecundario,
+              ),
             ),
             if (acao != null) ...[const SizedBox(height: 24), acao!],
           ],
