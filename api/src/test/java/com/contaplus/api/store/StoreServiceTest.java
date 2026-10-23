@@ -1,5 +1,6 @@
 package com.contaplus.api.store;
 
+import com.contaplus.api.DatabaseCleaner;
 import com.contaplus.api.TestcontainersConfiguration;
 import com.contaplus.api.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,9 +26,12 @@ public class StoreServiceTest {
     @Autowired
     StoreRepository repository;
 
+    @Autowired
+    JdbcTemplate jdbc;
+
     @BeforeEach
     void setUp() {
-        repository.deleteAll();
+        DatabaseCleaner.limpar(jdbc);
     }
 
     @Test

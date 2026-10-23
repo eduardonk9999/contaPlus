@@ -1,15 +1,14 @@
 package com.contaplus.api.sale;
 
+import com.contaplus.api.DatabaseCleaner;
 import com.contaplus.api.TestcontainersConfiguration;
 import com.contaplus.api.product.Product;
 import com.contaplus.api.product.ProductRepository;
 import com.contaplus.api.product.ProductType;
 import com.contaplus.api.product.StockUnit;
-import com.contaplus.api.stock.StockMovementRepository;
 import com.contaplus.api.store.Store;
 import com.contaplus.api.store.StoreRepository;
 import com.contaplus.api.transaction.Transaction;
-import com.contaplus.api.transaction.TransactionRepository;
 import com.contaplus.api.transaction.TransactionSource;
 import com.contaplus.api.transaction.TransactionStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -43,10 +43,7 @@ public class SaleServiceTest {
     ProductRepository productRepository;
 
     @Autowired
-    TransactionRepository transactionRepository;
-
-    @Autowired
-    StockMovementRepository stockMovementRepository;
+    JdbcTemplate jdbc;
 
     Store store;
     Product product1;
@@ -54,10 +51,7 @@ public class SaleServiceTest {
 
     @BeforeEach
     void setUp() {
-        stockMovementRepository.deleteAll();
-        transactionRepository.deleteAll();
-        productRepository.deleteAll();
-        storeRepository.deleteAll();
+        DatabaseCleaner.limpar(jdbc);
 
         store = storeRepository.save(new Store("Loja Vendas"));
 
@@ -81,7 +75,8 @@ public class SaleServiceTest {
             List.of(new SaleService.ItemVendaRequest(product1.getId(), BigDecimal.valueOf(2))),
             TransactionSource.MANUAL,
             null,
-            OffsetDateTime.now()
+            OffsetDateTime.now(),
+            null
         );
 
         Transaction transaction = saleService.confirmarVenda(request);
@@ -104,7 +99,8 @@ public class SaleServiceTest {
             List.of(new SaleService.ItemVendaRequest(product1.getId(), BigDecimal.ONE)),
             TransactionSource.MANUAL,
             null,
-            OffsetDateTime.now()
+            OffsetDateTime.now(),
+            null
         );
 
         Transaction first = saleService.confirmarVenda(request);
@@ -127,7 +123,8 @@ public class SaleServiceTest {
             List.of(new SaleService.ItemVendaRequest(product1.getId(), BigDecimal.valueOf(3))),
             TransactionSource.MANUAL,
             null,
-            OffsetDateTime.now()
+            OffsetDateTime.now(),
+            null
         );
 
         saleService.confirmarVenda(request);
@@ -150,7 +147,8 @@ public class SaleServiceTest {
             ),
             TransactionSource.MANUAL,
             null,
-            OffsetDateTime.now()
+            OffsetDateTime.now(),
+            null
         );
 
         Transaction transaction = saleService.confirmarVenda(request);
@@ -176,7 +174,8 @@ public class SaleServiceTest {
             List.of(new SaleService.ItemVendaRequest(product1.getId(), BigDecimal.ONE)),
             TransactionSource.MANUAL,
             null,
-            OffsetDateTime.now()
+            OffsetDateTime.now(),
+            null
         );
 
         Transaction transaction = saleService.confirmarVenda(request);
@@ -223,13 +222,13 @@ public class SaleServiceTest {
         saleService.confirmarVenda(new SaleService.ConfirmarVendaRequest(
             store.getId(), key1, "Venda 1",
             List.of(new SaleService.ItemVendaRequest(product1.getId(), BigDecimal.ONE)),
-            TransactionSource.MANUAL, null, OffsetDateTime.now()
+            TransactionSource.MANUAL, null, OffsetDateTime.now(), null
         ));
 
         saleService.confirmarVenda(new SaleService.ConfirmarVendaRequest(
             store.getId(), key2, "Venda 2",
             List.of(new SaleService.ItemVendaRequest(product2.getId(), BigDecimal.ONE)),
-            TransactionSource.MANUAL, null, OffsetDateTime.now()
+            TransactionSource.MANUAL, null, OffsetDateTime.now(), null
         ));
 
         List<Transaction> vendas = saleService.listarVendasPorStore(store.getId());
@@ -249,7 +248,8 @@ public class SaleServiceTest {
             List.of(new SaleService.ItemVendaRequest(product1.getId(), BigDecimal.ONE)),
             TransactionSource.MANUAL,
             null,
-            OffsetDateTime.now()
+            OffsetDateTime.now(),
+            null
         );
 
         assertThatThrownBy(() -> saleService.confirmarVenda(request))
@@ -271,7 +271,8 @@ public class SaleServiceTest {
             List.of(new SaleService.ItemVendaRequest(outroProduto.getId(), BigDecimal.ONE)),
             TransactionSource.MANUAL,
             null,
-            OffsetDateTime.now()
+            OffsetDateTime.now(),
+            null
         );
 
         assertThatThrownBy(() -> saleService.confirmarVenda(request))
