@@ -27,6 +27,12 @@ spring:
 google:
   client-id: ${GOOGLE_CLIENT_ID:}
 
+# Lançamento por voz/texto (Claude). Sem ANTHROPIC_API_KEY a API sobe
+# normalmente e /v1/voice/interpret responde 503.
+voice:
+  anthropic-api-key: ${ANTHROPIC_API_KEY:}
+  model: ${VOICE_MODEL:claude-opus-5-5}
+
 jwt:
   secret: ${JWT_SECRET:chave-secreta-contaplus-desenvolvimento-min-256-bits-ok}
   expiration: 86400000

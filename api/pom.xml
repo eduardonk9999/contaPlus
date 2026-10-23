@@ -68,6 +68,13 @@
 			<version>2.7.0</version>
 		</dependency>
 
+		<!-- Claude (Anthropic): interpreta frases faladas ou digitadas -->
+		<dependency>
+			<groupId>com.anthropic</groupId>
+			<artifactId>anthropic-java</artifactId>
+			<version>2.34.0</version>
+		</dependency>
+
 		<!-- Rate Limiting -->
 		<dependency>
 			<groupId>com.bucket4j</groupId>

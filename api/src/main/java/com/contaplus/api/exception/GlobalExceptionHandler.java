@@ -8,6 +8,7 @@ import com.contaplus.api.cashregister.CashRegisterAlreadyOpenException;
 import com.contaplus.api.cashregister.CashRegisterClosedException;
 import com.contaplus.api.cashregister.NoCashRegisterOpenException;
 import com.contaplus.api.security.UnauthorizedStoreAccessException;
+import com.contaplus.api.voice.VoiceUnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -101,6 +102,19 @@ public class GlobalExceptionHandler {
             request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(VoiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleVoiceUnavailable(
+            VoiceUnavailableException ex,
+            HttpServletRequest request) {
+        ErrorResponse error = ErrorResponse.of(
+            HttpStatus.SERVICE_UNAVAILABLE.value(),
+            "Service Unavailable",
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 
     @ExceptionHandler(GoogleAuthNotConfiguredException.class)

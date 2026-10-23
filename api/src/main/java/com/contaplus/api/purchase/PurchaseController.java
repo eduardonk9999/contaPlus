@@ -48,7 +48,8 @@ public class PurchaseController {
                 .toList(),
             request.source(),
             request.occurredAt(),
-            request.supplierId()
+            request.supplierId(),
+            request.originalInput()
         );
 
         Transaction transaction = purchaseService.registrarCompra(serviceRequest);
@@ -129,7 +130,8 @@ public class PurchaseController {
         @NotEmpty(message = "items cannot be empty") List<ItemRequest> items,
         TransactionSource source,
         OffsetDateTime occurredAt,
-        UUID supplierId
+        UUID supplierId,
+        String originalInput
     ) {}
 
     record ItemRequest(

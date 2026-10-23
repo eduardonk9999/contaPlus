@@ -68,6 +68,10 @@ public class PurchaseService {
             occurredAt
         );
 
+        if (request.originalInput() != null) {
+            transaction.setOriginalInput(request.originalInput());
+        }
+
         if (request.supplierId() != null) {
             Supplier supplier = supplierRepository.findById(request.supplierId())
                 .orElseThrow(() -> new ResourceNotFoundException("Supplier", request.supplierId()));
@@ -145,7 +149,8 @@ public class PurchaseService {
         List<ItemCompraRequest> items,
         TransactionSource source,
         OffsetDateTime occurredAt,
-        UUID supplierId
+        UUID supplierId,
+        String originalInput
     ) {}
 
     public record ItemCompraRequest(
