@@ -8,6 +8,9 @@ class AppColors {
   static const Color campo = Color(0xFFF2F4F7); // cinza bem claro dos campos
   static const Color textoSuave = Color(0xFF8A94A6); // ícones/placeholders
   static const Color textoSecundario = Color(0xFF667085);
+  static const Color sucesso = Color(0xFF067647);
+  static const Color alerta = Color(0xFFB54708);
+  static const Color perigo = Color(0xFFD92D20);
 }
 
 /// Tema global do Conta+. Material 3, superfície branca, primário azul BB,
@@ -61,5 +64,31 @@ ThemeData buildAppTheme() {
         textStyle: const TextStyle(fontWeight: FontWeight.w600),
       ),
     ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: AppColors.azulBB,
+      foregroundColor: AppColors.branco,
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: AppColors.branco,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: AppColors.azulBB.withValues(alpha: 0.12),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? AppColors.azulBB
+              : AppColors.textoSecundario,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => TextStyle(
+          fontSize: 12,
+          fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+          color: states.contains(WidgetState.selected)
+              ? AppColors.azulBB
+              : AppColors.textoSecundario,
+        ),
+      ),
+    ),
+    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
   );
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'home_page.dart';
+import 'app_shell.dart';
 import 'login_page.dart';
 import 'session/session_controller.dart';
 import 'theme.dart';
@@ -15,7 +15,7 @@ class AuthGate extends StatelessWidget {
     final session = SessionScope.of(context);
     return switch (session.status) {
       SessionStatus.restoring => const _SplashView(),
-      SessionStatus.authenticated => HomePage(user: session.user!),
+      SessionStatus.authenticated => AppShell(user: session.user!, api: session.api),
       SessionStatus.unauthenticated => const LoginPage(),
       SessionStatus.unavailable => _UnavailableView(
           message: session.errorMessage ?? 'Não foi possível conectar ao servidor.',

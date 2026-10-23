@@ -38,6 +38,7 @@ dependencies:
   # Cliente HTTP simples para falar com a API Conta+.
   http: ^1.2.2
   flutter_secure_storage: ^11.2.0
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:
