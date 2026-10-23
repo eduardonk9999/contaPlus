@@ -37,7 +37,7 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             AuthenticationManager authenticationManager,
-            @Value("${spring.security.oauth2.client.registration.google.client-id:}") String googleClientId
+            @Value("${google.client-id:}") String googleClientId
     ) {
         this.userRepository = userRepository;
         this.storeRepository = storeRepository;

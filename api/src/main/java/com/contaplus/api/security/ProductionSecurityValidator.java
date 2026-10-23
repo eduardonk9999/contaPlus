@@ -64,10 +64,9 @@ public class ProductionSecurityValidator {
     }
 
     private void validateProductionGoogleOAuth() {
-        String googleClientId = environment.getProperty("spring.security.oauth2.client.registration.google.client-id", "");
-        String googleClientSecret = environment.getProperty("spring.security.oauth2.client.registration.google.client-secret", "");
+        String googleClientId = environment.getProperty("google.client-id", "");
 
-        if (googleClientId.isBlank() || googleClientSecret.isBlank()) {
+        if (googleClientId.isBlank()) {
             log.warn("Google OAuth não configurado. Login com Google estará desabilitado.");
         } else {
             log.info("Google OAuth configurado para produção");
